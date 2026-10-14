@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { emptyWorkspace, type Attempt, type Exercise, type Topic } from '../src/types/state';
-import { gradeExact, publicExercise, topicStatus, validateMap } from '../src/learning/conceptloom';
+import {
+  emptyWorkspace,
+  type Attempt,
+  type Exercise,
+  type Topic,
+  type LessonContent,
+} from '../src/types/state';
+import {
+  gradeExact,
+  publicExercise,
+  topicStatus,
+  validateMap,
+  prepareLesson,
+} from '../src/learning/conceptloom';
 import { mastery, topicMastery } from '../src/learning/mastery';
 import { createCourse, deleteCourse, initialTopics } from '../src/learning/courses';
 import { newCard, Rating, reviewCard } from '../src/learning/reviews';
@@ -34,6 +46,31 @@ function attempt(dimension: Attempt['dimension'], accurate = true): Attempt {
   };
 }
 describe('evidence-based learning', () => {
+  it('mixes choices while keeping answer comparison independent of display order', () => {
+    const exercise: Exercise = {
+      id: 'e',
+      type: 'multiple-choice',
+      dimension: 'recognition',
+      prompt: 'Pick a verb',
+      options: ['learn', 'book'],
+      answers: ['learn'],
+      rationale: 'Learn is a verb.',
+      criteria: ['Verb'],
+    };
+    const content: LessonContent = {
+      concept: 'Verbs',
+      explanation: 'Actions',
+      connection: 'Words represent actions.',
+      examples: ['I learn.'],
+      summary: 'Verbs represent actions.',
+      exercises: [exercise],
+      flashcards: [{ front: 'A verb?', back: 'An action word.' }],
+    };
+    const mixed = prepareLesson(content, () => 0);
+    expect(mixed.exercises[0].options).toEqual(['book', 'learn']);
+    expect(gradeExact(mixed.exercises[0], 'learn')).toBe(true);
+    expect(content.exercises[0].options).toEqual(['learn', 'book']);
+  });
   it('immediate answers remain provisional until a delayed FSRS retrieval', () => {
     const state = emptyWorkspace();
     state.attempts = ['recognition', 'recall', 'application', 'transfer'].map((d) =>

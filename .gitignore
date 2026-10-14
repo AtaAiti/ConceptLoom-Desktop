@@ -65,3 +65,5 @@ desktop/src-tauri/icons/ios/
 desktop/src-tauri/icons/Square*.png
 desktop/src-tauri/icons/StoreLogo.png
 desktop/src-tauri/icons/icon.icns
+desktop/releases/
+desktop/*.tsbuildinfo

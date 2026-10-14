@@ -4,6 +4,18 @@
 
 # Concept Loom
 
+## ConceptLoom Desktop (early implementation)
+
+The new [Windows desktop application](desktop/README.md) adds an original React
+interface, local Ollama tutoring (`qwen3:4b` by default), SQLite storage, dependency
+maps, evidence-based lessons, flashcards and FSRS reviews. It requires no paid AI,
+cloud service or account. The original MCP workflow described below is preserved.
+
+Start desktop development with `cd desktop`, `npm ci`, and `npm run desktop`.
+See [the repository inspection and implementation plan](docs/desktop-plan.md) for
+methodology reuse, architecture, milestones and verification. The desktop README
+documents Windows build requirements, privacy, storage and current limitations.
+
 **A portable AI learning workflow for Codex, Claude Code, OpenCode, and DeepSeek Harness.**
 
 Version 1.1.0 · MIT licensed · Node.js 20+
