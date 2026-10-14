@@ -1,0 +1,2 @@
+export const knowledgeMapPrompt =
+  'Propose the smallest useful dependency route from the learner frontier to their goal. Return JSON {"topics":[{"key":"unique_slug","title":"short concept","description":"connection to teach","dependsOn":["earlier_slug"]}]}. Maximum 15 concepts. Roots have no dependencies. No cycles. Include diagnostic foundations; do not assume self-reported knowledge has been demonstrated.';

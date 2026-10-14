@@ -54,3 +54,14 @@ courses/
 # Local installation sandboxes
 test-learning*/
 learning-workspace*/
+desktop/node_modules/
+desktop/dist/
+desktop/src-tauri/target/
+desktop/test-results/
+desktop/playwright-report/
+desktop/src-tauri/gen/
+desktop/src-tauri/icons/android/
+desktop/src-tauri/icons/ios/
+desktop/src-tauri/icons/Square*.png
+desktop/src-tauri/icons/StoreLogo.png
+desktop/src-tauri/icons/icon.icns
