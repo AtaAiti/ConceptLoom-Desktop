@@ -30,3 +30,18 @@ initial implementation; PDF parsing, speech, alternate local provider adapters,
 and legacy MCP data import remain future milestones. Native UI automation and
 signed release distribution have not been verified. No release has been pushed
 or published. The debug installer is intended for local evaluation.
+
+## Library update 0.1.1
+
+Fixed the inherited 20,000-character validation ceiling for library text. Notes
+now accept up to 1,000,000 characters, and pasted text can be saved without a
+title. PDF.js extracts selectable PDF text locally; its worker, CMaps, standard
+fonts and license are shipped in the installer. Limits are 25 MB / 300 PDF pages
+and 2 MB for TXT/Markdown. Scans without text layers and protected/corrupt files
+receive clear errors, with existing notes preserved. No OCR is included.
+
+Added three regression tests for long multilingual text, empty/oversized inputs
+and file validation, plus browser scenarios for paste/save/reload and offline
+PDF import/corrupt PDF handling. Production preview exercises the bundled worker
+with the application's content security policy. Run with
+`PLAYWRIGHT_PREVIEW=1 npx playwright test` after the frontend build.

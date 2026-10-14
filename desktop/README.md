@@ -20,12 +20,12 @@ subscription, paid API, telemetry or cloud backend.
 - Manual/automatic flashcards and real `ts-fsrs` scheduling with Again/Hard/Good/Easy.
 - Course-aware tutor with mistakes, evidence, resume points, due reviews and notes.
 - Actual activity, streaks, practice time, accuracy, weak areas and calendar.
-- Local TXT/Markdown library and model discovery/selection in Settings.
+- Local PDF/TXT/Markdown library, pasted text without a required title, and model discovery/selection in Settings.
 - Native SQLite migrations and transactional save-before-continue persistence.
 
 This is an initial implementation, not an audited stable release. AI-generated
 subject matter still needs human judgment. Responses are schema-validated; this
-does not establish factual correctness. No PDF parsing, voice exercises, LM Studio
+does not establish factual correctness. No PDF OCR, voice exercises, LM Studio
 adapter, export/import of legacy MCP notebooks, or automatic model downloads in
 the app yet. Build downloads require internet; installed runtime needs only the
 already downloaded Ollama model. Browser preview uses separate browser storage.
@@ -41,7 +41,7 @@ For use: Windows 11 with WebView2, Ollama, and a downloaded model. Recommended
 starting point: 16 GB RAM and `qwen3:4b`. Actual speed depends on Ollama's hardware
 support; AMD graphics acceleration is not assumed.
 
-For building: Node.js 22.12+ (Node 22 recommended), Rust stable MSVC toolchain,
+For building: Node.js 22.13+ (Node 22 recommended), Rust stable MSVC toolchain,
 Visual Studio C++ Build Tools, Windows SDK, WebView2. See the official
 [Tauri Windows prerequisites](https://v2.tauri.app/start/prerequisites/#windows).
 
@@ -75,7 +75,7 @@ npm run package  # native Windows NSIS installer
 ```
 
 For an initial debug installer use `npm run package -- --debug`. It is written to
-`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.1.0_x64-setup.exe`.
+`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.1.1_x64-setup.exe`.
 The default release package is written under `src-tauri/target/release/bundle/nsis`.
 Installers are unsigned local development builds.
 
@@ -97,6 +97,15 @@ Do not move or edit a live database. Back up the database directory after closin
 the app, including WAL/SHM files if present. Storage is private by locality, not
 encrypted at rest. Native diagnostics go to stderr during development and never
 send data anywhere. Imported notes and AI conversations remain local.
+
+Library → Import PDF / TXT / Markdown reads PDF text locally using a bundled
+PDF.js worker, fonts and CMaps. No document is uploaded and no CDN is contacted.
+PDF limits: 25 MB and 300 pages. Scanned PDFs without selectable text need OCR
+before importing; password-protected PDFs need an unlocked copy. The extracted
+text is saved in SQLite; the original PDF binary is not copied into the library.
+TXT/Markdown files can be up to 2 MB. Each saved text can contain up to 1,000,000
+characters. Paste copied text into “Copied text / notes” and click “Add text to
+library”; an empty title uses the first line automatically.
 
 ## Architecture
 

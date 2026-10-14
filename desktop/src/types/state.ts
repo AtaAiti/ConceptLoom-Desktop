@@ -139,7 +139,7 @@ export const noteSchema = z.object({
   id,
   courseId: id,
   title: text.max(200),
-  content: text.max(200000),
+  content: z.string().trim().min(1).max(1000000),
   createdAt: date,
 });
 export const sessionSchema = z.object({

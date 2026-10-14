@@ -21,5 +21,9 @@ jobs:
       - run: npm test
       - run: npx playwright install chromium
       - run: npx playwright test
+      - name: Verify PDF worker in production with CSP
+        run: |
+          $env:PLAYWRIGHT_PREVIEW = '1'
+          npx playwright test e2e/library.spec.ts
       - run: cargo test --manifest-path src-tauri/Cargo.toml
       - run: npm run tauri -- build --no-bundle
