@@ -4,12 +4,17 @@
 
 # Concept Loom
 
-## ConceptLoom Desktop (early implementation)
+## ConceptLoom Desktop 0.2.0
 
 The new [Windows desktop application](desktop/README.md) adds an original React
 interface, local Ollama tutoring (`qwen3:4b` by default), SQLite storage, dependency
 maps, evidence-based lessons, flashcards and FSRS reviews. It requires no paid AI,
 cloud service or account. The original MCP workflow described below is preserved.
+
+Version 0.2 adds independent workspaces, libraries with page-aware PDF sources,
+local FTS5 search, source-grounded routes/lessons/tutor citations, Today and Roadmap
+views, a Study Hub and Ctrl+K search. Existing desktop data migrates into My Learning.
+See [delivered scope and remaining phases](docs/workspaces-sources-status.md).
 
 Start desktop development with `cd desktop`, `npm ci`, and `npm run desktop`.
 See [the repository inspection and implementation plan](docs/desktop-plan.md) for
