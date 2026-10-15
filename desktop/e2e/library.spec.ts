@@ -54,7 +54,8 @@ test('pasted text over 20,000 characters saves without a title and survives relo
     page.getByRole('heading', { name: 'Copied learning material', exact: true }),
   ).toBeVisible();
   const stored = await page.evaluate(
-    () => JSON.parse(localStorage.getItem('conceptloom-desktop-preview-v1')!).notes[0].content,
+    () =>
+      JSON.parse(localStorage.getItem('conceptloom-desktop-preview-v1')!).sources[0].pages[0].text,
   );
   expect(stored).toBe(copied.trim());
 });

@@ -1,6 +1,7 @@
 export const MAX_TEXT_CHARACTERS = 1_000_000;
 export const MAX_TEXT_BYTES = 2 * 1024 * 1024;
 export const MAX_PDF_BYTES = 25 * 1024 * 1024;
+import type { SourcePage } from '../../types/sources';
 
 export function materialText(content: string): string {
   const value = content
@@ -31,6 +32,15 @@ export async function readMaterial(
   file: File,
   progress: (message: string) => void,
 ): Promise<string> {
+  const pages = await readMaterialPages(file, progress);
+  return materialText(
+    pages.map((p) => (p.page ? `Page ${p.page}\n${p.text}` : p.text)).join('\n\n'),
+  );
+}
+export async function readMaterialPages(
+  file: File,
+  progress: (message: string) => void,
+): Promise<SourcePage[]> {
   const pdf = /\.pdf$/i.test(file.name);
   if (!pdf && !/\.(txt|md|markdown)$/i.test(file.name))
     throw new Error('Choose a PDF, TXT, or Markdown file.');
@@ -38,7 +48,7 @@ export async function readMaterial(
     throw new Error(
       pdf ? 'PDF files must be smaller than 25 MB.' : 'Text files must be smaller than 2 MB.',
     );
-  if (!pdf) return materialText(await file.text());
-  const { extractPdfText } = await import('./pdf');
-  return materialText(await extractPdfText(new Uint8Array(await file.arrayBuffer()), progress));
+  if (!pdf) return [{ page: null, text: materialText(await file.text()) }];
+  const { extractPdfPages } = await import('./pdf');
+  return extractPdfPages(new Uint8Array(await file.arrayBuffer()), progress);
 }

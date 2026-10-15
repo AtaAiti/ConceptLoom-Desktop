@@ -5,23 +5,22 @@ export function tutorContext(state: Workspace, course: Course, topic?: Topic): s
   return JSON.stringify({
     currentTopic: topic?.title,
     goal: course.goal,
-    concepts: topics.map((t) => ({ title: t.title, mastery: topicMastery(state, t.id) })),
+    concepts: topics
+      .slice(0, 24)
+      .map((t) => ({ title: t.title, mastery: topicMastery(state, t.id) })),
     recentMistakes: state.attempts
       .filter((a) => a.courseId === course.id && !a.accurate)
       .slice(-10)
       .map((a) => ({
         topic: topics.find((t) => t.id === a.topicId)?.title,
-        response: a.response,
-        feedback: a.feedback,
+        response: a.response.slice(0, 400),
+        feedback: a.feedback.slice(0, 400),
         confidence: a.confidence,
       })),
     dueReviews: state.cards
       .filter((c) => c.courseId === course.id && new Date(c.due) <= new Date())
-      .map((c) => c.front),
+      .slice(0, 10)
+      .map((c) => c.front.slice(0, 200)),
     resumePoint: state.sessions.find((s) => s.courseId === course.id)?.nextStep,
-    notes: state.notes
-      .filter((n) => n.courseId === course.id)
-      .slice(-3)
-      .map((n) => ({ title: n.title, content: n.content.slice(0, 2500) })),
   });
 }

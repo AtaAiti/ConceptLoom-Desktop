@@ -12,7 +12,7 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
   const [status, setStatus] = useState('');
   const [working, setWorking] = useState(false);
   const [model, setModel] = useState(state.settings.model);
-  const [choice, setChoice] = useState('English');
+  const [choice, setChoice] = useState('Custom');
   const next = () => setStep((s) => s + 1);
   return (
     <main className="onboarding">
@@ -152,9 +152,9 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
           <>
             <div className="eyebrow">04 / FIRST COURSE</div>
             <h1>What opens your next door?</h1>
-            <p>Start with a language, or bring a subject of your own.</p>
+            <p>Study any subject with your own materials. Languages are one option.</p>
             <div className="course-choices">
-              {['English', 'Korean', 'Custom'].map((n) => (
+              {['Custom', 'English', 'Korean'].map((n) => (
                 <button
                   key={n}
                   className={choice === n ? 'chosen' : ''}
@@ -167,6 +167,17 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
             </div>
             <button className="primary" onClick={next}>
               Set your learning goal <ArrowRight size={16} />
+            </button>
+            <button
+              className="secondary"
+              onClick={() => {
+                void commit((s) => ({
+                  ...s,
+                  settings: { ...s.settings, onboardingComplete: true },
+                })).catch((e) => setStatus(errorMessage(e)));
+              }}
+            >
+              Start with an empty workspace
             </button>
           </>
         )}

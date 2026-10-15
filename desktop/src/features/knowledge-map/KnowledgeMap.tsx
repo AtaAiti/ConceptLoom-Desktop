@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Background,
   Controls,
+  MiniMap,
   ReactFlow,
   type Connection,
   type NodeMouseHandler,
@@ -12,7 +13,8 @@ import { Empty, Field, Panel, PageHeading } from '../../components/ui';
 import { topicStatus, validateMap } from '../../learning/conceptloom';
 import { topicMastery } from '../../learning/mastery';
 import { mapSchema } from '../../ai/schemas';
-import { systemPrompt } from '../../ai/prompts/system';
+import { generateGrounded } from '../../ai/sourceLearning';
+import { SourceContext, Citations } from '../library/SourceContext';
 import { knowledgeMapPrompt } from '../../ai/prompts/knowledgeMap';
 import type { AIProvider } from '../../ai/providers/ollama';
 import type { Commit } from '../../hooks/useWorkspace';
@@ -57,7 +59,7 @@ export function KnowledgeMap({
     const status = topicStatus(state, topic);
     return {
       id: topic.id,
-      position: { x: column * 250 + 80, y: level * 110 + 30 },
+      position: topic.position ?? { x: column * 250 + 80, y: level * 110 + 30 },
       data: {
         label: (
           <>
@@ -111,12 +113,14 @@ export function KnowledgeMap({
                 run(async () => {
                   setWorking(true);
                   try {
-                    const result = await provider.structured(
-                      [
-                        { role: 'system', content: systemPrompt(course) },
-                        { role: 'user', content: knowledgeMapPrompt },
-                      ],
+                    const { result, citations } = await generateGrounded(
+                      provider,
+                      state,
+                      course,
+                      `${course.name} ${course.goal}`,
+                      knowledgeMapPrompt,
                       mapSchema,
+                      true,
                     );
                     const ids = new Map(result.topics.map((t) => [t.key, crypto.randomUUID()]));
                     if (ids.size !== result.topics.length)
@@ -133,6 +137,7 @@ export function KnowledgeMap({
                         return id;
                       }),
                       approved: true,
+                      citations,
                     }));
                     validateMap(suggested);
                     setProposal(suggested);
@@ -164,6 +169,7 @@ export function KnowledgeMap({
           </div>
         }
       />
+      <SourceContext state={state} course={course} commit={commit} run={run} />
       <div className="map-legend">
         {['available', 'learning', 'reviewing', 'mastered', 'locked'].map((s) => (
           <span key={s}>
@@ -204,10 +210,21 @@ export function KnowledgeMap({
             fitView
             minZoom={0.2}
             colorMode={state.settings.theme}
-            nodesDraggable={false}
+            nodesDraggable
+            onNodeDragStop={(_event, node) =>
+              run(() =>
+                commit((s) => ({
+                  ...s,
+                  topics: s.topics.map((t) =>
+                    t.id === node.id ? { ...t, position: node.position } : t,
+                  ),
+                })),
+              )
+            }
           >
             <Background gap={24} size={1} />
             <Controls />
+            <MiniMap pannable zoomable />
           </ReactFlow>
         </div>
       ) : (
@@ -222,6 +239,7 @@ export function KnowledgeMap({
             <h2>
               {topics.some((t) => t.id === edit.id) ? 'Your next connection' : 'Add a concept'}
             </h2>
+            <Citations citations={edit.citations} />
             <Field label="Concept">
               <input
                 value={edit.title}

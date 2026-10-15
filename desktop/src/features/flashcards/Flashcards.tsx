@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Empty, Field, PageHeading, Panel } from '../../components/ui';
 import { newCard } from '../../learning/reviews';
+import { Citations } from '../library/SourceContext';
 import type { Commit } from '../../hooks/useWorkspace';
 import type { Course, Flashcard, Workspace } from '../../types/state';
 
@@ -44,6 +45,15 @@ export function Flashcards({
             </span>
             <h3>{card.front}</h3>
             <p className="prose">{card.back}</p>
+            {card.blocks
+              ?.filter((b) => b.type !== 'text')
+              .map((b, i) => (
+                <p className="prose" key={i}>
+                  <strong>{b.type}: </strong>
+                  {b.text}
+                </p>
+              ))}
+            <Citations citations={card.citations} />
             <div className="button-row">
               <button className="text-button" onClick={() => setEdit({ ...card })}>
                 <Pencil size={14} />

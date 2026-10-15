@@ -1,13 +1,14 @@
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { MAX_TEXT_CHARACTERS } from './materials';
+import type { SourcePage } from '../../types/sources';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
-export async function extractPdfText(
+export async function extractPdfPages(
   bytes: Uint8Array,
   progress: (message: string) => void,
-): Promise<string> {
+): Promise<SourcePage[]> {
   const task = getDocument({
     data: bytes,
     cMapUrl: `${import.meta.env.BASE_URL}pdf-assets/cmaps/`,
@@ -23,7 +24,7 @@ export async function extractPdfText(
       throw new Error(
         'Import up to 300 PDF pages at a time. Split this PDF into smaller sections.',
       );
-    const pages: string[] = [];
+    const pages: SourcePage[] = [];
     let length = 0;
     for (let index = 1; index <= document.numPages; index++) {
       progress(`Reading PDF · page ${index} of ${document.numPages}…`);
@@ -33,17 +34,17 @@ export async function extractPdfText(
         .map((item) => ('str' in item ? `${item.str}${item.hasEOL ? '\n' : ' '}` : ''))
         .join('')
         .trim();
-      if (content) pages.push(`Page ${index}\n${content}`);
+      pages.push({ page: index, text: content });
       length += content.length + 20;
       page.cleanup();
       if (length > MAX_TEXT_CHARACTERS)
         throw new Error('This PDF contains too much text. Split it into smaller sections.');
     }
-    if (!pages.length)
+    if (!pages.some((p) => p.text.trim()))
       throw new Error(
         'This PDF has no readable text layer. It may be a scan: use a PDF with selectable text, or paste text obtained with OCR.',
       );
-    return pages.join('\n\n');
+    return pages;
   } catch (error) {
     if (error instanceof Error && error.name === 'PasswordException')
       throw new Error('This PDF is password protected. Save an unlocked copy and try again.');
@@ -56,4 +57,13 @@ export async function extractPdfText(
   } finally {
     await task.destroy();
   }
+}
+export async function extractPdfText(
+  bytes: Uint8Array,
+  progress: (message: string) => void,
+): Promise<string> {
+  return (await extractPdfPages(bytes, progress))
+    .filter((p) => p.text)
+    .map((p) => `Page ${p.page}\n${p.text}`)
+    .join('\n\n');
 }

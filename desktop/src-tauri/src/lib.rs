@@ -1,4 +1,6 @@
+mod changes;
 mod database;
+mod source_index;
 use serde_json::Value;
 use std::{path::PathBuf, sync::Mutex, time::Duration};
 use tauri::{Manager, State};
@@ -12,16 +14,32 @@ fn db_error(error: impl std::fmt::Display) -> String {
     "Your data could not be read or saved. Check available disk space and restart the app. No progress was advanced.".into()
 }
 #[tauri::command]
-fn load_workspace(storage: State<Storage>) -> Result<Option<Value>, String> {
+async fn load_workspace(storage: State<'_, Storage>) -> Result<Option<Value>, String> {
     let db = storage.connection.lock().map_err(db_error)?;
     let db = db.as_ref().map_err(Clone::clone)?;
     database::load(db).map_err(db_error)
 }
 #[tauri::command]
-fn save_workspace(storage: State<Storage>, state: Value) -> Result<(), String> {
+async fn apply_changes(storage: State<'_, Storage>, patch: Value) -> Result<(), String> {
     let mut db = storage.connection.lock().map_err(db_error)?;
     let db = db.as_mut().map_err(|error| error.clone())?;
-    database::save(db, &state).map_err(db_error)
+    changes::apply(db, &patch).map_err(db_error)
+}
+#[tauri::command]
+async fn search_sources(
+    storage: State<'_, Storage>,
+    workspace_id: String,
+    source_ids: Vec<String>,
+    query: String,
+) -> Result<Value, String> {
+    let db = storage.connection.lock().map_err(db_error)?;
+    source_index::search(
+        db.as_ref().map_err(Clone::clone)?,
+        &workspace_id,
+        &source_ids,
+        &query,
+    )
+    .map_err(db_error)
 }
 #[tauri::command]
 fn data_location(storage: State<Storage>) -> String {
@@ -105,7 +123,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             load_workspace,
-            save_workspace,
+            apply_changes,
+            search_sources,
             data_location,
             ollama_request
         ])

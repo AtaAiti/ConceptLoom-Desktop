@@ -6,20 +6,24 @@ test('first launch, course persistence, manual card and FSRS review', async ({ p
   await page.getByRole('button', { name: 'Make your first connection' }).click();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await page.getByRole('button', { name: 'Use this model' }).click();
+  await page.getByRole('button', { name: 'English', exact: false }).click();
   await page.getByRole('button', { name: 'Set your learning goal' }).click();
+  await page.getByLabel('What do you want to be able to do?').fill('Speak English clearly.');
   await page.getByRole('button', { name: 'Create course', exact: true }).click();
-  await expect(page.getByRole('heading', { name: /Good / })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your next study session.' })).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.screenshot({ path: 'test-results/dashboard.png', fullPage: true });
+  await page.screenshot({ path: 'test-results/dashboard.png', fullPage: true, animations: 'disabled' });
   await page.reload();
-  await expect(page.getByRole('heading', { name: /Good / })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your next study session.' })).toBeVisible();
   await page.getByRole('button', { name: 'Knowledge Map', exact: true }).click();
   await expect(page.getByText('Sentence foundations', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Study', exact: true }).click();
   await page.getByRole('button', { name: 'Flashcards', exact: true }).click();
   await page.getByRole('button', { name: 'Create card' }).click();
   await page.getByLabel('Front · question').fill('When do we use present perfect?');
   await page.getByLabel('Back · answer').fill('For a past event connected to the present.');
   await page.getByRole('button', { name: 'Save card' }).click();
+  await page.getByRole('button', { name: 'Study', exact: true }).click();
   await page.getByRole('button', { name: 'Reviews', exact: true }).click();
   await expect(
     page.getByText('For a past event connected to the present.', { exact: true }),
@@ -108,7 +112,7 @@ test('lesson diagnosis, deterministic grading, evidence and resume persistence',
     route.fulfill({ json: { message: { content: JSON.stringify(content) } } }),
   );
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: 'Continue learning' }).click();
+  await page.getByRole('button', { name: 'Learn next connection' }).click();
   await page.getByRole('button', { name: 'Create local lesson' }).click();
   await expect(page.getByRole('heading', { name: 'Locate your knowledge frontier' })).toBeVisible();
   await expect(page.getByText(content.explanation, { exact: true })).not.toBeVisible();
@@ -127,6 +131,6 @@ test('lesson diagnosis, deterministic grading, evidence and resume persistence',
   // Opening the next checkpoint must not award additional evidence.
   expect(persisted.attempts[0].dimension).toBe('recognition');
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: 'Continue learning' }).click();
+  await page.getByRole('button', { name: 'Resume lesson' }).click();
   await expect(page.getByRole('heading', { name: 'I ___ English. Use learn.' })).toBeVisible();
 });

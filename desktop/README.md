@@ -1,10 +1,23 @@
 # ConceptLoom Desktop
 
-An early Windows desktop implementation of ConceptLoom's connection-first
+A Windows desktop implementation of ConceptLoom's connection-first
 learning workflow. Free, MIT licensed, local-first, powered by Ollama. No account,
 subscription, paid API, telemetry or cloud backend.
 
-## Features implemented
+## New in 0.2.0
+
+- Independent workspaces with switcher, global Home, pinning, recent order, descriptions, goals, archive/restore and typed-name deletion.
+- Safe v1 migration into My Learning; existing IDs, cards, review scheduling and evidence are preserved.
+- Subject-independent study paths: general, language, programming, STEM, humanities, exam, professional and custom.
+- Workspace libraries with PDF pages, source metadata, tags, text previews and study-path attachments.
+- Native SQLite FTS5/BM25 search, page-bounded chunks and explicit source selection. Browser preview uses simpler lexical scoring.
+- Source-grounded routes, lessons, generated cards and tutor answers; validated citation IDs open saved excerpts. Sources-only and mixed modes are explicit.
+- Dedicated Roadmap, Today plan, Study Hub, saved graph positions, minimap and Ctrl+K local search.
+- Reduced motion preference plus operating-system reduced-motion support.
+
+See [iteration scope, architecture and remaining work](../docs/workspaces-sources-status.md). This release implements the workspace/source foundation and the first vertical slice; it does not claim all later phases of the product roadmap.
+
+## Features preserved
 
 - Five-step first-run onboarding and original dark dashboard; optional light theme.
 - English/Korean starter dependency routes and arbitrary custom courses.
@@ -18,7 +31,7 @@ subscription, paid API, telemetry or cloud backend.
 - Deterministic answer checks where possible, local rubric grading for open
   responses, explicit “I don't know yet” and confidence calibration.
 - Manual/automatic flashcards and real `ts-fsrs` scheduling with Again/Hard/Good/Easy.
-- Course-aware tutor with mistakes, evidence, resume points, due reviews and notes.
+- Course-aware tutor with mistakes, evidence, resume points and due reviews. Source context is explicitly selected; notes are no longer automatically concatenated into prompts.
 - Actual activity, streaks, practice time, accuracy, weak areas and calendar.
 - Local PDF/TXT/Markdown library, pasted text without a required title, and model discovery/selection in Settings.
 - Native SQLite migrations and transactional save-before-continue persistence.
@@ -74,8 +87,8 @@ npm run build    # strict TypeScript + production frontend
 npm run package  # native Windows NSIS installer
 ```
 
-For an initial debug installer use `npm run package -- --debug`. It is written to
-`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.1.1_x64-setup.exe`.
+For an initial debug installer use `npx tauri build --debug`. It is written to
+`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.2.0_x64-setup.exe`.
 The default release package is written under `src-tauri/target/release/bundle/nsis`.
 Installers are unsigned local development builds.
 
@@ -89,9 +102,9 @@ Tauri uses its resolved OS application data directory for
 `org.conceptloom.desktop/conceptloom.sqlite3`. Settings displays the actual path.
 SQLite uses foreign keys, WAL mode and one transaction per workspace update,
 so attempts, mistakes and resume points are committed together. Records have
-normalized identifiers/relationships and validated JSON payloads. The first
-version saves a whole workspace projection per transaction; targeted updates
-can replace this behind the repository interface as datasets grow.
+normalized identifiers/relationships and validated JSON payloads. Version 2 sends entity deltas and upserts only changed rows; changing one card does
+not rewrite courses, lessons or source indexes. The compatibility React layer still
+loads an application snapshot; lazy workspace reads remain planned.
 
 Do not move or edit a live database. Back up the database directory after closing
 the app, including WAL/SHM files if present. Storage is private by locality, not

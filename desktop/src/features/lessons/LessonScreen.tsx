@@ -6,6 +6,8 @@ import { masteryLabel, topicMastery } from '../../learning/mastery';
 import { lessonContentSchema, verdictSchema } from '../../ai/schemas';
 import { systemPrompt } from '../../ai/prompts/system';
 import { lessonPrompt } from '../../ai/prompts/lesson';
+import { generateGrounded } from '../../ai/sourceLearning';
+import { SourceContext, Citations } from '../library/SourceContext';
 import { quizPrompt } from '../../ai/prompts/quiz';
 import { newCard } from '../../learning/reviews';
 import type { AIProvider } from '../../ai/providers/ollama';
@@ -162,6 +164,8 @@ export function LessonScreen({
           </span>
         }
       />
+      {!lesson && <SourceContext state={state} course={course} commit={commit} run={run} />}
+      {lesson && <Citations citations={lesson.citations} />}
       {!lesson ? (
         <Panel>
           <Empty
@@ -175,11 +179,12 @@ export function LessonScreen({
                 run(async () => {
                   setWorking(true);
                   try {
-                    const generated = await provider.structured(
-                      [
-                        { role: 'system', content: systemPrompt(course) },
-                        { role: 'user', content: lessonPrompt(topic, state) },
-                      ],
+                    const { result: generated, citations } = await generateGrounded(
+                      provider,
+                      state,
+                      course,
+                      `${topic.title} ${topic.description}`,
+                      lessonPrompt(topic, state),
                       lessonContentSchema,
                     );
                     const content = prepareLesson(generated);
@@ -195,14 +200,21 @@ export function LessonScreen({
                             courseId: course.id,
                             topicId: topic.id,
                             content,
+                            citations,
                             createdAt: now,
                           },
                         ],
                         cards: [
                           ...s.cards,
-                          ...content.flashcards.map((c) =>
-                            newCard(course.id, topic.id, c.front, c.back),
-                          ),
+                          ...content.flashcards.map((c) => ({
+                            ...newCard(course.id, topic.id, c.front, c.back),
+                            citations,
+                            createdBy: 'ai' as const,
+                            blocks: [
+                              { type: 'text' as const, text: c.back },
+                              { type: 'example' as const, text: content.examples[0] },
+                            ],
+                          })),
                         ],
                         sessions: [
                           ...s.sessions.filter((v) => v.id !== topic.id),

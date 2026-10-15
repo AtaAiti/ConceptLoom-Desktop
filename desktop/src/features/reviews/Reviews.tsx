@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Citations } from '../library/SourceContext';
 import { CheckCircle2 } from 'lucide-react';
 import { Empty, PageHeading, Panel } from '../../components/ui';
 import { reviewCard, Rating } from '../../learning/reviews';
@@ -23,6 +24,30 @@ export function Reviews({
     .filter((c) => new Date(c.due) <= now)
     .sort((a, b) => a.due.localeCompare(b.due));
   const card = due[0];
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.altKey || event.metaKey || event.repeat || working || !card)
+        return;
+      if (
+        (event.target as HTMLElement).closest(
+          'input,textarea,select,[contenteditable="true"],button',
+        )
+      )
+        return;
+      if (event.code === 'Space' && !revealed) {
+        event.preventDefault();
+        setRevealed(true);
+      }
+      if (revealed && /^[1-4]$/.test(event.key)) {
+        event.preventDefault();
+        document
+          .querySelectorAll<HTMLButtonElement>('.rating-buttons button')
+          [Number(event.key) - 1]?.click();
+      }
+    };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [card?.id, revealed, working]);
   const overdue = due.filter((c) => dayKey(c.due) < dayKey(now)).length;
   return (
     <>
@@ -52,6 +77,7 @@ export function Reviews({
           {revealed ? (
             <>
               <div className="review-answer prose">{card.back}</div>
+              <Citations citations={card.citations} />
               <p className="muted">How well did you recall it?</p>
               <div className="rating-buttons">
                 {[

@@ -34,7 +34,7 @@ export function useWorkspace() {
     const operation = queue.current.then(async () => {
       if (!ready) throw new Error('Storage is not ready.');
       const next = change(current.current);
-      await repository.save(next);
+      await repository.save(next, current.current);
       current.current = next;
       setState(next);
     });

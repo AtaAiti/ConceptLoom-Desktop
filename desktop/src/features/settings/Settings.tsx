@@ -111,6 +111,13 @@ export function Settings({
         </Panel>
         <Panel title="Learning preferences">
           <div className="form-grid">
+            <Field label="Reduced motion">
+              <input
+                type="checkbox"
+                checked={settings.reducedMotion ?? false}
+                onChange={(e) => setSettings({ ...settings, reducedMotion: e.target.checked })}
+              />
+            </Field>
             <Field label="Theme">
               <select
                 value={settings.theme}

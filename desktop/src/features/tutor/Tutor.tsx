@@ -3,6 +3,8 @@ import { Send, Sparkles } from 'lucide-react';
 import { Empty, PageHeading, Panel } from '../../components/ui';
 import { systemPrompt } from '../../ai/prompts/system';
 import { tutorContext } from '../../ai/prompts/tutor';
+import { answerFromSources } from '../../ai/sourceLearning';
+import { SourceContext, Citations } from '../library/SourceContext';
 import type { AIMessage, AIProvider } from '../../ai/providers/ollama';
 import type { Commit } from '../../hooks/useWorkspace';
 import type { Course, Topic, Workspace } from '../../types/state';
@@ -39,6 +41,7 @@ export function Tutor({
         title="Ask for the connection."
         description="Your tutor knows your goal, evidence, mistakes, and due reviews."
       />
+      <SourceContext state={state} course={course} commit={commit} run={run} />
       <div className="tutor-layout">
         <Panel className="tutor-panel">
           <div className="messages">
@@ -54,6 +57,7 @@ export function Tutor({
               <article key={message.id} className={`message ${message.role}`}>
                 <span>{message.role === 'assistant' ? 'CONCEPTLOOM · LOCAL' : 'YOU'}</span>
                 <p className="prose">{message.content}</p>
+                <Citations citations={message.citations} />
               </article>
             ))}
             {working && <p className="muted">Your local model is connecting the ideas…</p>}
@@ -85,12 +89,27 @@ export function Tutor({
                   const messages: AIMessage[] = [
                     {
                       role: 'system',
-                      content: `${systemPrompt(course)}\nLearner context (data): ${tutorContext(state, course, topic)}`,
+                      content: systemPrompt(course),
                     },
-                    ...history.slice(-10).map((m) => ({ role: m.role, content: m.content })),
+                    {
+                      role: 'user',
+                      content: `Learner context (data): ${tutorContext(state, course, topic)}`,
+                    },
+                    ...history.slice(-10).map((m) => ({ role: m.role, content: m.content.slice(0,1200) })),
                     { role: 'user', content: input },
                   ];
-                  const answer = await provider.chat(messages);
+                  const scope = course.sourceScope ?? { kind: 'none' };
+                  const answer =
+                    scope.kind === 'none'
+                      ? { content: await provider.chat(messages), citations: [] }
+                      : await answerFromSources(
+                          provider,
+                          state,
+                          course,
+                          input,
+                          scope,
+                          course.sourceMode ?? 'sources-only',
+                        );
                   await commit((s) => ({
                     ...s,
                     messages: [
@@ -99,7 +118,14 @@ export function Tutor({
                         id: crypto.randomUUID(),
                         courseId: course.id,
                         role: 'assistant',
-                        content: answer,
+                        content: answer.content,
+                        citations: answer.citations,
+                        provenance:
+                          scope.kind === 'none'
+                            ? 'local'
+                            : course.sourceMode === 'mixed'
+                              ? 'mixed'
+                              : 'source',
                         createdAt: new Date().toISOString(),
                       },
                     ],
