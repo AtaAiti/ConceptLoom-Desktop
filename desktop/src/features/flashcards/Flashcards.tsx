@@ -33,7 +33,7 @@ export function Flashcards({
         action={
           <button className="primary" onClick={() => setEdit(newCard(course.id, null, '', ''))}>
             <Plus size={16} />
-            Create card
+            Создать карточку
           </button>
         }
       />
@@ -57,11 +57,11 @@ export function Flashcards({
             <div className="button-row">
               <button className="text-button" onClick={() => setEdit({ ...card })}>
                 <Pencil size={14} />
-                Edit
+                Изменить
               </button>
               <button className="text-button danger" onClick={() => setRemoving(card.id)}>
                 <Trash2 size={14} />
-                Delete
+                Удалить
               </button>
             </div>
           </Panel>
@@ -91,14 +91,14 @@ export function Flashcards({
             }}
           >
             <h2>Flashcard</h2>
-            <Field label="Front · question">
+            <Field label="Лицевая сторона · вопрос">
               <textarea
                 required
                 value={edit.front}
                 onChange={(e) => setEdit({ ...edit, front: e.target.value })}
               />
             </Field>
-            <Field label="Back · answer">
+            <Field label="Обратная сторона · ответ">
               <textarea
                 required
                 value={edit.back}
@@ -106,9 +106,9 @@ export function Flashcards({
               />
             </Field>
             <div className="button-row">
-              <button className="primary">Save card</button>
+              <button className="primary">Сохранить карточку</button>
               <button type="button" className="secondary" onClick={() => setEdit(null)}>
-                Cancel
+                Отмена
               </button>
             </div>
           </form>
@@ -116,7 +116,7 @@ export function Flashcards({
       )}
       {removing && (
         <div className="modal-backdrop">
-          <Panel title="Delete this flashcard?">
+          <Panel title="Удалить эту карточку?">
             <p>This also removes its review history. This cannot be undone.</p>
             <div className="button-row">
               <button
@@ -132,7 +132,7 @@ export function Flashcards({
                   })
                 }
               >
-                Delete card
+                Удалить карточку
               </button>
               <button className="secondary" onClick={() => setRemoving(null)}>
                 Keep card

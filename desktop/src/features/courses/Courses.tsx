@@ -29,7 +29,7 @@ export function Courses({
         action={
           <button className="primary" onClick={() => setEditing('new')}>
             <Plus size={16} />
-            Create course
+            Создать направление
           </button>
         }
       />
@@ -65,18 +65,18 @@ export function Courses({
               </p>
               <div className="button-row">
                 <button className="primary compact" onClick={() => select(course)}>
-                  Open map
+                  Открыть карту
                   <ArrowRight size={14} />
                 </button>
                 <button
-                  aria-label={`Edit ${course.name}`}
+                  aria-label={`Изменить ${course.name}`}
                   className="icon-button"
                   onClick={() => setEditing(course)}
                 >
                   <Pencil size={16} />
                 </button>
                 <button
-                  aria-label={`Delete ${course.name}`}
+                  aria-label={`Удалить ${course.name}`}
                   className="icon-button danger"
                   onClick={() => setDeleting(course)}
                 >
@@ -99,9 +99,9 @@ export function Courses({
         <div className="modal-backdrop">
           <section className="modal wide">
             <div className="panel-heading">
-              <h2>{editing === 'new' ? 'Create a learning path' : 'Edit your course'}</h2>
+              <h2>{editing === 'new' ? 'Создать учебное направление' : 'Изменить направление'}</h2>
               <button className="text-button" onClick={() => setEditing(null)}>
-                Close
+                Закрыть
               </button>
             </div>
             <CourseForm
@@ -117,7 +117,7 @@ export function Courses({
       )}
       {deleting && (
         <div className="modal-backdrop">
-          <Panel title={`Delete ${deleting.name}?`}>
+          <Panel title={`Удалить ${deleting.name}?`}>
             <p>This permanently removes its lessons, cards, notes, and progress.</p>
             <div className="button-row">
               <button
@@ -129,7 +129,7 @@ export function Courses({
                   })
                 }
               >
-                Delete course
+                Удалить направление
               </button>
               <button className="secondary" onClick={() => setDeleting(null)}>
                 Keep course

@@ -82,10 +82,10 @@ export function CourseForm({
         }
       }}
     >
-      <Field label="Course name">
+      <Field label="Название направления">
         <input required maxLength={100} value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
-      <Field label="Subject kind">
+      <Field label="Тип предмета">
         <select
           value={subjectKind}
           onChange={(e) => setSubjectKind(e.target.value as Course['subjectKind'])}
@@ -130,14 +130,14 @@ export function CourseForm({
       <Field label="Target date (optional)">
         <input type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
       </Field>
-      <Field label="Description">
+      <Field label="Описание">
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
       <Field label="Target level">
         <input required value={targetLevel} onChange={(e) => setTargetLevel(e.target.value)} />
       </Field>
       <div className="span-2">
-        <Field label="What do you want to be able to do?">
+        <Field label="Чему вы хотите научиться?">
           <textarea required value={goal} onChange={(e) => setGoal(e.target.value)} />
         </Field>
       </div>
@@ -169,7 +169,7 @@ export function CourseForm({
           </p>
         )}
         <button className="primary" disabled={saving}>
-          {saving ? 'Saving…' : course ? 'Save changes' : 'Create course'}
+          {saving ? 'Saving…' : course ? 'Save changes' : 'Создать направление'}
         </button>
       </div>
     </form>

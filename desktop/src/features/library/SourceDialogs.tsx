@@ -37,7 +37,7 @@ export function SourceDialogs({
           <form
             className="modal"
             role="dialog"
-            aria-label="Edit source"
+            aria-label="Изменить источник"
             onSubmit={(e) => {
               e.preventDefault();
               run(async () => {
@@ -49,7 +49,7 @@ export function SourceDialogs({
               });
             }}
           >
-            <Field label="Source title">
+            <Field label="Название источника">
               <input
                 required
                 value={edit.title}
@@ -57,7 +57,7 @@ export function SourceDialogs({
                 onChange={(e) => setEdit({ ...edit, title: e.target.value })}
               />
             </Field>
-            <Field label="Tags (comma separated)">
+            <Field label="Теги (через запятую)">
               <input
                 value={edit.tags.join(',')}
                 onChange={(e) =>
@@ -71,7 +71,7 @@ export function SourceDialogs({
                 }
               />
             </Field>
-            <Field label="Move to library">
+            <Field label="Переместить в библиотеку">
               <select
                 value={edit.libraryIds[0]}
                 onChange={(e) => setEdit({ ...edit, libraryIds: [e.target.value] })}
@@ -84,7 +84,7 @@ export function SourceDialogs({
               </select>
             </Field>
             <fieldset>
-              <legend>Attach to study paths</legend>
+              <legend>Прикрепить к направлениям</legend>
               {state.courses.map((c) => (
                 <label key={c.id}>
                   <input
@@ -104,9 +104,9 @@ export function SourceDialogs({
               ))}
             </fieldset>
             <div className="button-row">
-              <button className="primary">Save source</button>
+              <button className="primary">Сохранить источник</button>
               <button type="button" className="secondary" onClick={() => setEdit(null)}>
-                Cancel
+                Отмена
               </button>
             </div>
           </form>
@@ -114,24 +114,24 @@ export function SourceDialogs({
       )}
       {preview && (
         <div className="modal-backdrop">
-          <section className="modal wide" role="dialog" aria-label="Source preview">
+          <section className="modal wide" role="dialog" aria-label="Предпросмотр источника">
             <h2>{preview.title}</h2>
             <div className="button-row">
               <button className="secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>
-                Previous page
+                Предыдущая страница
               </button>
               <span>
-                Page {preview.pages[page].page ?? 1} / {preview.pages.length}
+                Страница {preview.pages[page].page ?? 1} / {preview.pages.length}
               </span>
               <button
                 className="secondary"
                 disabled={page >= preview.pages.length - 1}
                 onClick={() => setPage(page + 1)}
               >
-                Next page
+                Следующая страница
               </button>
               <button autoFocus className="secondary" onClick={() => setPreview(null)}>
-                Close preview
+                Закрыть просмотр
               </button>
             </div>
             <p className="prose source-page">{preview.pages[page].text}</p>
@@ -141,10 +141,10 @@ export function SourceDialogs({
       {removing && (
         <div className="modal-backdrop">
           <section className="modal" role="dialog" aria-label="Remove source">
-            <h2>Remove {removing.title}?</h2>
+            <h2>Удалить {removing.title}?</h2>
             <p>
-              Its local index will be removed. Generated lessons retain their cited excerpts. Your
-              original file is unchanged.
+              Источник и его поисковый индекс будут удалены. Цитаты в готовых занятиях сохранятся.
+              Исходный файл останется на прежнем месте.
             </p>
             <div className="button-row">
               <button
@@ -160,10 +160,10 @@ export function SourceDialogs({
                   })
                 }
               >
-                Delete source
+                Удалить источник
               </button>
               <button className="secondary" onClick={() => setRemoving(null)}>
-                Cancel
+                Отмена
               </button>
             </div>
           </section>

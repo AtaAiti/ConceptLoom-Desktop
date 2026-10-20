@@ -26,7 +26,7 @@ export function SourceContext({
   return (
     <section className="source-context" aria-label="Source context">
       <label>
-        Sources{' '}
+        Источники{' '}
         <select
           aria-label="Source scope"
           value={scope.kind === 'library' ? `library:${scope.libraryId}` : scope.kind}
@@ -41,9 +41,9 @@ export function SourceContext({
             );
           }}
         >
-          <option value="none">No sources</option>
-          <option value="all">All workspace sources</option>
-          <option value="selected">Selected sources</option>
+          <option value="none">Без источников</option>
+          <option value="all">Все источники пространства</option>
+          <option value="selected">Выбранные источники</option>
           {state.libraries.map((l) => (
             <option key={l.id} value={`library:${l.id}`}>
               {l.name}
@@ -53,7 +53,7 @@ export function SourceContext({
       </label>
       {scope.kind !== 'none' && (
         <label>
-          Answer mode{' '}
+          Режим ответа{' '}
           <select
             aria-label="Source answer mode"
             value={course.sourceMode ?? 'sources-only'}
@@ -69,8 +69,8 @@ export function SourceContext({
               );
             }}
           >
-            <option value="sources-only">Sources only</option>
-            <option value="mixed">Sources + general knowledge</option>
+            <option value="sources-only">Только источники</option>
+            <option value="mixed">Источники + общие знания</option>
           </select>
         </label>
       )}
@@ -103,11 +103,11 @@ export function Citations({ citations = [] }: { citations?: SourceCitation[] }) 
   if (!citations.length) return null;
   return (
     <div className="citations">
-      <span className="eyebrow">SOURCE</span>
+      <span className="eyebrow">ИСТОЧНИК</span>
       {citations.map((c) => (
         <button key={c.chunkId} className="text-button" onClick={() => setOpened(c)}>
           {c.title}
-          {c.page ? ` · p. ${c.page}` : ' · excerpt'}
+          {c.page ? ` · с. ${c.page}` : ' · фрагмент'}
         </button>
       ))}
       {opened && (
@@ -120,14 +120,14 @@ export function Citations({ citations = [] }: { citations?: SourceCitation[] }) 
           <section className="modal" role="dialog" aria-modal="true" aria-label="Source excerpt">
             <h2>
               {opened.title}
-              {opened.page ? ` · Page ${opened.page}` : ''}
+              {opened.page ? ` · Страница ${opened.page}` : ''}
             </h2>
             <p className="prose">{opened.excerpt}</p>
             <p className="muted small">
               Passage supplied to the local model. Check its interpretation against this evidence.
             </p>
             <button autoFocus className="secondary" onClick={() => setOpened(null)}>
-              Close excerpt
+              Закрыть фрагмент
             </button>
           </section>
         </div>

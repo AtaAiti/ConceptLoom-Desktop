@@ -4,7 +4,7 @@
 
 # Concept Loom
 
-## ConceptLoom Desktop 0.2.0
+## ConceptLoom Desktop 0.2.1
 
 The new [Windows desktop application](desktop/README.md) adds an original React
 interface, local Ollama tutoring (`qwen3:4b` by default), SQLite storage, dependency
@@ -15,6 +15,10 @@ Version 0.2 adds independent workspaces, libraries with page-aware PDF sources,
 local FTS5 search, source-grounded routes/lessons/tutor citations, Today and Roadmap
 views, a Study Hub and Ctrl+K search. Existing desktop data migrates into My Learning.
 See [delivered scope and remaining phases](docs/workspaces-sources-status.md).
+
+Version 0.2.1 applies the user's CAPYBARA Figma design, including workspace Home,
+source list/page preview, native window controls and focused card review.
+See [design details](docs/capybara-design.md).
 
 Start desktop development with `cd desktop`, `npm ci`, and `npm run desktop`.
 See [the repository inspection and implementation plan](docs/desktop-plan.md) for

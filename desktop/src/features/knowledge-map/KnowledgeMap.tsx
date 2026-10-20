@@ -35,17 +35,22 @@ export function KnowledgeMap({
   learn: (topic: Topic) => void;
   run: (task: () => Promise<void>) => void;
 }) {
+  const [selectedId, setSelectedId] = useState('');
   const [edit, setEdit] = useState<Topic | null>(null);
   const [proposal, setProposal] = useState<Topic[]>([]);
   const [working, setWorking] = useState(false);
   if (!course)
     return (
       <Empty
-        title="A map needs a destination"
-        description="Create a course to map your learning path."
+        title="Карта начинается с цели"
+        description="Создайте учебное направление для карты знаний."
       />
     );
   const topics = state.topics.filter((t) => t.courseId === course.id);
+  const selected =
+    topics.find((t) => t.id === selectedId) ??
+    topics.find((t) => topicStatus(state, t) !== 'locked') ??
+    topics[0];
   function depth(topic: Topic): number {
     return topic.dependsOn.length
       ? 1 + Math.max(...topic.dependsOn.map((id) => depth(topics.find((t) => t.id === id)!)))
@@ -65,7 +70,16 @@ export function KnowledgeMap({
           <>
             <strong>{topic.title}</strong>
             <span>
-              {status} · {topicMastery(state, topic.id)}% mastery
+              {
+                {
+                  available: 'Доступно',
+                  learning: 'Изучаем',
+                  reviewing: 'Повторяем',
+                  mastered: 'Освоено',
+                  locked: 'Впереди',
+                }[status]
+              }{' '}
+              · {topicMastery(state, topic.id)}%
             </span>
           </>
         ),
@@ -83,7 +97,7 @@ export function KnowledgeMap({
   );
   const onClick: NodeMouseHandler = (_event, node) => {
     const topic = topics.find((t) => t.id === node.id);
-    if (topic) setEdit({ ...topic });
+    if (topic) setSelectedId(topic.id);
   };
   const connect = (connection: Connection) =>
     run(async () => {
@@ -102,8 +116,8 @@ export function KnowledgeMap({
     <>
       <PageHeading
         eyebrow="WEAVE / CONNECTED KNOWLEDGE"
-        title="See how it all connects."
-        description={`${course.name} · A path from your frontier to your goal.`}
+        title="Карта знаний"
+        description={`${course.name} · стрелка ведёт от предпосылки к новой связи`}
         action={
           <div className="button-row">
             <button
@@ -148,7 +162,7 @@ export function KnowledgeMap({
               }
             >
               <Sparkles size={15} />
-              {working ? 'Weaving…' : 'Suggest a route'}
+              {working ? 'Строим маршрут…' : 'Предложить маршрут'}
             </button>
             <button
               className="primary"
@@ -164,7 +178,7 @@ export function KnowledgeMap({
               }
             >
               <Plus size={16} />
-              Add concept
+              Добавить понятие
             </button>
           </div>
         }
@@ -174,14 +188,24 @@ export function KnowledgeMap({
         {['available', 'learning', 'reviewing', 'mastered', 'locked'].map((s) => (
           <span key={s}>
             <i className={s} />
-            {s}
+            {
+              (
+                {
+                  available: 'Доступно',
+                  learning: 'Изучаем',
+                  reviewing: 'Повторяем',
+                  mastered: 'Освоено',
+                  locked: 'Впереди',
+                } as Record<string, string>
+              )[s]
+            }
           </span>
         ))}
       </div>
       {proposal.length > 0 && (
-        <Panel title="Proposed route · review before adding">
+        <Panel title="Предложенный маршрут · проверьте перед добавлением">
           <p>{proposal.map((t) => t.title).join(' → ')}</p>
-          <p className="muted">Adds a new route; preserves your existing route and evidence.</p>
+          <p className="muted">Добавляет маршрут, сохраняя существующие связи и результаты.</p>
           <div className="button-row">
             <button
               className="primary"
@@ -192,67 +216,111 @@ export function KnowledgeMap({
                 })
               }
             >
-              Accept route
+              Принять маршрут
             </button>
             <button className="secondary" onClick={() => setProposal([])}>
-              Discard
+              Отклонить
             </button>
           </div>
         </Panel>
       )}
       {topics.length ? (
-        <div className="map-canvas">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodeClick={onClick}
-            onConnect={connect}
-            fitView
-            minZoom={0.2}
-            colorMode={state.settings.theme}
-            nodesDraggable
-            onNodeDragStop={(_event, node) =>
-              run(() =>
-                commit((s) => ({
-                  ...s,
-                  topics: s.topics.map((t) =>
-                    t.id === node.id ? { ...t, position: node.position } : t,
-                  ),
-                })),
-              )
-            }
-          >
-            <Background gap={24} size={1} />
-            <Controls />
-            <MiniMap pannable zoomable />
-          </ReactFlow>
+        <div className="map-layout">
+          <div className="map-canvas">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodeClick={onClick}
+              onConnect={connect}
+              fitView
+              fitViewOptions={{ maxZoom: 1, padding: 0.15 }}
+              minZoom={0.2}
+              maxZoom={1.5}
+              colorMode={state.settings.theme}
+              nodesDraggable
+              onNodeDragStop={(_event, node) =>
+                run(() =>
+                  commit((s) => ({
+                    ...s,
+                    topics: s.topics.map((t) =>
+                      t.id === node.id ? { ...t, position: node.position } : t,
+                    ),
+                  })),
+                )
+              }
+            >
+              <Background gap={24} size={1} />
+              <Controls />
+              <MiniMap pannable zoomable />
+            </ReactFlow>
+          </div>
+          {selected && (
+            <aside className="map-details">
+              <span className="status-pill">СЛЕДУЮЩАЯ СВЯЗЬ</span>
+              <h2>{selected.title}</h2>
+              <p className="muted">{selected.description}</p>
+              <small>ПРЕДПОСЫЛКИ</small>
+              <p className="accent">
+                {selected.dependsOn
+                  .map((id) => topics.find((t) => t.id === id)?.title)
+                  .join(' · ') || 'Можно начать здесь'}
+              </p>
+              <hr />
+              <h3>Что подтверждено</h3>
+              {['recognition', 'recall', 'application', 'transfer'].map((d, i) => (
+                <div className="evidence-row" key={d}>
+                  <span>{['Узнавание', 'Воспроизведение', 'Применение', 'Перенос'][i]}</span>
+                  <small>
+                    {state.attempts.some(
+                      (a) => a.topicId === selected.id && a.dimension === d && a.accurate,
+                    )
+                      ? 'Подтверждено'
+                      : 'Нет проверки'}
+                  </small>
+                </div>
+              ))}
+              <Citations citations={selected.citations} />
+              <div className="button-row">
+                <button
+                  className="primary"
+                  disabled={topicStatus(state, selected) === 'locked'}
+                  onClick={() => learn(selected)}
+                >
+                  Разобрать связь →
+                </button>
+                <button className="text-button" onClick={() => setEdit({ ...selected })}>
+                  Изменить
+                </button>
+              </div>
+            </aside>
+          )}
         </div>
       ) : (
         <Empty
-          title="Start with one connection"
-          description="Add concepts yourself or ask your local AI to suggest a route."
+          title="Начните с одной связи"
+          description="Добавьте понятия самостоятельно или запросите маршрут у локальной модели."
         />
       )}
       {edit && (
         <div className="modal-backdrop">
           <section className="modal">
             <h2>
-              {topics.some((t) => t.id === edit.id) ? 'Your next connection' : 'Add a concept'}
+              {topics.some((t) => t.id === edit.id) ? 'Ваша следующая связь' : 'Добавить понятие'}
             </h2>
             <Citations citations={edit.citations} />
-            <Field label="Concept">
+            <Field label="Понятие">
               <input
                 value={edit.title}
                 onChange={(e) => setEdit({ ...edit, title: e.target.value })}
               />
             </Field>
-            <Field label="Connection / description">
+            <Field label="Связь / описание">
               <textarea
                 value={edit.description}
                 onChange={(e) => setEdit({ ...edit, description: e.target.value })}
               />
             </Field>
-            <Field label="Prerequisites">
+            <Field label="Предпосылки">
               <select
                 multiple
                 value={edit.dependsOn}
@@ -293,7 +361,7 @@ export function KnowledgeMap({
                   })
                 }
               >
-                Save concept
+                Сохранить понятие
               </button>
               {topics.some((t) => t.id === edit.id) && (
                 <button
@@ -304,11 +372,11 @@ export function KnowledgeMap({
                     setEdit(null);
                   }}
                 >
-                  Open lesson
+                  Открыть занятие
                 </button>
               )}
               <button className="secondary" onClick={() => setEdit(null)}>
-                Close
+                Закрыть
               </button>
             </div>
           </section>

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ConceptLoom",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "identifier": "org.conceptloom.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -13,11 +13,12 @@
     "windows": [
       {
         "title": "ConceptLoom",
-        "width": 1440,
-        "height": 900,
+        "width": 1366,
+        "height": 768,
         "minWidth": 1000,
         "minHeight": 700,
-        "backgroundColor": "#101117"
+        "backgroundColor": "#17181d",
+        "decorations": false
       }
     ],
     "security": {

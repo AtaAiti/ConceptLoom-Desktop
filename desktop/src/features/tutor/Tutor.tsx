@@ -29,8 +29,8 @@ export function Tutor({
   if (!course)
     return (
       <Empty
-        title="Your tutor needs a destination"
-        description="Create or choose a course before asking your local tutor."
+        title="Репетитору нужна цель"
+        description="Создайте или выберите учебное направление."
       />
     );
   const history = state.messages.filter((m) => m.courseId === course.id);
@@ -38,8 +38,8 @@ export function Tutor({
     <>
       <PageHeading
         eyebrow="YOUR LOCAL AI / TUTOR"
-        title="Ask for the connection."
-        description="Your tutor knows your goal, evidence, mistakes, and due reviews."
+        title={topic?.title ?? 'Репетитор'}
+        description="Репетитор · одна связь за раз · объяснение с опорой на ваши материалы"
       />
       <SourceContext state={state} course={course} commit={commit} run={run} />
       <div className="tutor-layout">
@@ -47,8 +47,8 @@ export function Tutor({
           <div className="messages">
             {!history.length && (
               <Empty
-                title="A question is a good beginning"
-                description={`Ask about ${course.name}, compare ideas, or unpack a mistake.`}
+                title="Вопрос — хорошее начало"
+                description={`Задайте вопрос по теме «${course.name}», сравните идеи или разберите ошибку.`}
               >
                 <Sparkles size={24} />
               </Empty>
@@ -60,7 +60,7 @@ export function Tutor({
                 <Citations citations={message.citations} />
               </article>
             ))}
-            {working && <p className="muted">Your local model is connecting the ideas…</p>}
+            {working && <p className="muted">Локальная модель ищет связь…</p>}
           </div>
           <form
             className="tutor-input"
@@ -95,7 +95,9 @@ export function Tutor({
                       role: 'user',
                       content: `Learner context (data): ${tutorContext(state, course, topic)}`,
                     },
-                    ...history.slice(-10).map((m) => ({ role: m.role, content: m.content.slice(0,1200) })),
+                    ...history
+                      .slice(-10)
+                      .map((m) => ({ role: m.role, content: m.content.slice(0, 1200) })),
                     { role: 'user', content: input },
                   ];
                   const scope = course.sourceScope ?? { kind: 'none' };
@@ -138,7 +140,7 @@ export function Tutor({
           >
             <textarea
               aria-label="Ask your tutor"
-              placeholder="What makes these two ideas different?"
+              placeholder="Объясните следующий шаг своими словами…"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               disabled={working}
@@ -153,28 +155,35 @@ export function Tutor({
           </form>
         </Panel>
         <aside>
-          <Panel title="Your learning context">
+          <Panel title="Опора в источнике">
+            <Citations
+              citations={
+                [...history].reverse().find((m) => m.citations?.length)?.citations ??
+                topic?.citations
+              }
+            />
             <div className="context-item">
-              <small>COURSE</small>
+              <small>НАПРАВЛЕНИЕ</small>
               <strong>{course.name}</strong>
             </div>
             <div className="context-item">
-              <small>CURRENT CONNECTION</small>
-              <strong>{topic?.title ?? 'Choose a concept on your map'}</strong>
+              <small>ТЕКУЩАЯ СВЯЗЬ</small>
+              <strong>{topic?.title ?? 'Выберите понятие на карте'}</strong>
             </div>
             <div className="context-item">
-              <small>DESTINATION</small>
+              <small>ЦЕЛЬ</small>
               <p>{course.goal}</p>
             </div>
             <div className="context-item">
-              <small>EXPLANATIONS IN</small>
+              <small>ЯЗЫК ОБЪЯСНЕНИЙ</small>
               <strong>{course.explanationLanguage}</strong>
             </div>
           </Panel>
-          <p className="muted small">
-            Tutor conversations support understanding. Demonstrate mastery through lesson
-            checkpoints and reviews.
-          </p>
+          <Panel title="Веб выключен">
+            <p className="muted small">
+              Работает локальная модель. Проверяйте объяснения по указанным фрагментам источников.
+            </p>
+          </Panel>
         </aside>
       </div>
     </>

@@ -4,6 +4,14 @@ A Windows desktop implementation of ConceptLoom's connection-first
 learning workflow. Free, MIT licensed, local-first, powered by Ollama. No account,
 subscription, paid API, telemetry or cloud backend.
 
+## New in 0.2.1
+
+The desktop now follows the user's CAPYBARA Figma design: compact navigation,
+lavender accents, bundled Inter typography, light/dark themes, native window
+controls, workspace Home, Today, Sources with page preview, Roadmap, a selected
+concept panel, Study Hub and focused FSRS review. These screens use real saved
+learning data. See [design source, scope and validation](../docs/capybara-design.md).
+
 ## New in 0.2.0
 
 - Independent workspaces with switcher, global Home, pinning, recent order, descriptions, goals, archive/restore and typed-name deletion.
@@ -19,7 +27,7 @@ See [iteration scope, architecture and remaining work](../docs/workspaces-source
 
 ## Features preserved
 
-- Five-step first-run onboarding and original dark dashboard; optional light theme.
+- Five-step first-run onboarding, learning dashboard and optional light theme.
 - English/Korean starter dependency routes and arbitrary custom courses.
 - Course creation, editing, goals, prior knowledge, explanation language and deletion.
 - Interactive React Flow map, manual concept/dependency editing, validated DAGs,
@@ -88,7 +96,7 @@ npm run package  # native Windows NSIS installer
 ```
 
 For an initial debug installer use `npx tauri build --debug`. It is written to
-`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.2.0_x64-setup.exe`.
+`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.2.1_x64-setup.exe`.
 The default release package is written under `src-tauri/target/release/bundle/nsis`.
 Installers are unsigned local development builds.
 

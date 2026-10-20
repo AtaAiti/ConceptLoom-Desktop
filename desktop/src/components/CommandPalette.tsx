@@ -45,7 +45,7 @@ export function CommandPalette({
       sourceId: s.id,
     })),
     ...state.topics.map((t) => ({
-      label: `Concept · ${t.title}`,
+      label: `Понятие · ${t.title}`,
       page: 'Learn',
       courseId: t.courseId,
       topicId: t.id,
@@ -127,7 +127,7 @@ export function CommandPalette({
         </div>
         {!found.length && <p>No matches in this workspace.</p>}
         <button className="secondary" onClick={close}>
-          Close search
+          Закрыть поиск
         </button>
       </section>
     </div>

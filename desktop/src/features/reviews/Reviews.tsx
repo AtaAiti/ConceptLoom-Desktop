@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react';
 import { Citations } from '../library/SourceContext';
 import { CheckCircle2 } from 'lucide-react';
-import { Empty, PageHeading, Panel } from '../../components/ui';
+import { Empty, Panel, Progress } from '../../components/ui';
 import { reviewCard, Rating } from '../../learning/reviews';
 import type { Grade } from 'ts-fsrs';
 import type { Commit } from '../../hooks/useWorkspace';
 import type { Workspace } from '../../types/state';
-import { dayKey } from '../../learning/planner';
 
+function intervalLabel(due: string, now: Date) {
+  const minutes = Math.max(1, Math.round((new Date(due).getTime() - now.getTime()) / 60000));
+  const unit = minutes >= 1440 ? 'day' : minutes >= 60 ? 'hour' : 'minute';
+  const value =
+    unit === 'day'
+      ? Math.round(minutes / 1440)
+      : unit === 'hour'
+        ? Math.round(minutes / 60)
+        : minutes;
+  return new Intl.RelativeTimeFormat('ru', { numeric: 'always' }).format(value, unit);
+}
 export function Reviews({
   state,
   commit,
@@ -19,6 +29,7 @@ export function Reviews({
 }) {
   const [revealed, setRevealed] = useState(false);
   const [working, setWorking] = useState(false);
+  const [completed, setCompleted] = useState(0);
   const now = new Date();
   const due = state.cards
     .filter((c) => new Date(c.due) <= now)
@@ -48,55 +59,63 @@ export function Reviews({
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [card?.id, revealed, working]);
-  const overdue = due.filter((c) => dayKey(c.due) < dayKey(now)).length;
   return (
     <>
-      <PageHeading
-        eyebrow="SPACED RETRIEVAL / FSRS"
-        title="Remember a little longer."
-        description="Try to retrieve the connection before you reveal the answer."
-      />
-      <div className="review-counts">
+      <div className="review-progress">
         <span>
-          Today <strong>{due.length}</strong>
+          {card ? `Карточка ${completed + 1} из ${completed + due.length}` : 'Повторение завершено'}
         </span>
-        <span>
-          Overdue <strong>{overdue}</strong>
-        </span>
-        <span>
-          Upcoming <strong>{state.cards.length - due.length}</strong>
-        </span>
+        <Progress
+          value={completed + due.length ? (completed / (completed + due.length)) * 100 : 100}
+        />
+        <small>Осталось {due.length}</small>
       </div>
       {card ? (
-        <Panel className="review-card">
-          <div className="eyebrow">
-            {state.courses.find((c) => c.id === card.courseId)?.name} ·{' '}
-            {card.reps ? 'RETRIEVAL' : 'NEW CONNECTION'}
-          </div>
-          <h2>{card.front}</h2>
-          {revealed ? (
-            <>
-              <div className="review-answer prose">{card.back}</div>
-              <Citations citations={card.citations} />
-              <p className="muted">How well did you recall it?</p>
+        <>
+          <Panel className="review-card">
+            <span className="status-pill">{card.reps ? 'ВОСПРОИЗВЕДЕНИЕ' : 'НОВАЯ СВЯЗЬ'}</span>
+            <h2>{card.front}</h2>
+            {revealed ? (
+              <>
+                <div className="review-answer prose">
+                  <div className="review-answer-heading">
+                    <span>ОТВЕТ ОТКРЫТ</span>
+                    <small>Сравните со своим объяснением</small>
+                  </div>
+                  {card.back}
+                </div>
+                <Citations citations={card.citations} />
+              </>
+            ) : (
+              <>
+                <p className="muted">Произнесите или запишите ответ по памяти.</p>
+                <button className="primary" onClick={() => setRevealed(true)}>
+                  Открыть ответ
+                </button>
+              </>
+            )}
+          </Panel>
+          {revealed && (
+            <div className="review-assessment">
+              <p className="muted small">Насколько самостоятельно вы вспомнили ответ?</p>
               <div className="rating-buttons">
                 {[
-                  { label: 'Again', value: Rating.Again },
-                  { label: 'Hard', value: Rating.Hard },
-                  { label: 'Good', value: Rating.Good },
-                  { label: 'Easy', value: Rating.Easy },
-                ].map((r) => (
+                  { label: 'Снова', key: 'again', value: Rating.Again },
+                  { label: 'Трудно', key: 'hard', value: Rating.Hard },
+                  { label: 'Хорошо', key: 'good', value: Rating.Good },
+                  { label: 'Легко', key: 'easy', value: Rating.Easy },
+                ].map((r, i) => (
                   <button
-                    key={r.label}
+                    key={r.key}
                     disabled={working}
-                    className={r.label.toLowerCase()}
+                    className={r.key}
                     onClick={() =>
                       run(async () => {
                         setWorking(true);
                         try {
                           await commit((s) => {
                             const current = s.cards.find((c) => c.id === card.id);
-                            if (!current) throw new Error('This card was removed.');
+                            if (!current) throw new Error('Эта карточка удалена.');
                             const time = new Date();
                             return {
                               ...s,
@@ -118,6 +137,7 @@ export function Reviews({
                               ],
                             };
                           });
+                          setCompleted((value) => value + 1);
                           setRevealed(false);
                         } finally {
                           setWorking(false);
@@ -125,30 +145,31 @@ export function Reviews({
                       })
                     }
                   >
-                    {r.label}
+                    <strong>
+                      {r.label}
+                      <small>{i + 1}</small>
+                    </strong>
+                    <span>{intervalLabel(reviewCard(card, r.value as Grade, now).due, now)}</span>
                   </button>
                 ))}
               </div>
-            </>
-          ) : (
-            <>
-              <p className="muted">Say or write the answer from memory.</p>
-              <button className="primary" onClick={() => setRevealed(true)}>
-                Reveal answer
-              </button>
-            </>
+            </div>
           )}
-        </Panel>
+        </>
       ) : (
         <Panel>
           <Empty
-            title="A clear mind. A clear queue."
-            description="No cards are due right now. Future reviews will appear when FSRS schedules them."
+            title="Все карточки на сегодня повторены"
+            description="Сейчас нет карточек к повторению. Они появятся по расписанию FSRS."
           >
             <CheckCircle2 className="success" size={35} />
           </Empty>
         </Panel>
       )}
+      <div className="review-help">
+        <span>Пробел — открыть ответ · 1–4 — выбрать оценку</span>
+        <span>Оценка меняет интервал, а не вашу «успешность»</span>
+      </div>
     </>
   );
 }

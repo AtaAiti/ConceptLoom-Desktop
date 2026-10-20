@@ -1,20 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { isTauri } from '@tauri-apps/api/core';
-import {
-  BookOpen,
-  ChartNoAxesCombined,
-  Cpu,
-  GitBranch,
-  GraduationCap,
-  House,
-  Library as LibraryIcon,
-  Map,
-  MessageCircle,
-  Settings as SettingsIcon,
-  ShieldCheck,
-  Target,
-  X,
-} from 'lucide-react';
+import { GitBranch, X } from 'lucide-react';
+import { DesignIcon, type DesignIconName } from './components/DesignIcon';
+import { WindowBar } from './components/WindowBar';
+import { Home } from './features/dashboard/Home';
 import { useWorkspace } from './hooks/useWorkspace';
 import { OllamaProvider } from './ai/providers/ollama';
 import { errorMessage } from './components/ui';
@@ -39,25 +27,33 @@ import { CommandPalette } from './components/CommandPalette';
 import { workspaceView, mergeWorkspace } from './db/workspaces';
 import type { Commit } from './hooks/useWorkspace';
 
-const navigation = [
-  { title: 'Home', icon: House },
-  { title: 'Today', icon: Target },
-  { title: 'Dashboard', icon: House },
-  { title: 'Courses', icon: BookOpen },
-  { title: 'Study', icon: GraduationCap },
-  { title: 'Knowledge Map', icon: Map },
-  { title: 'Roadmap', icon: GitBranch },
-  { title: 'AI Tutor', icon: MessageCircle },
-  { title: 'Statistics', icon: ChartNoAxesCombined },
-  { title: 'Library', icon: LibraryIcon },
-  { title: 'Settings', icon: SettingsIcon },
+const navigation: { title: string; label: string; icon: DesignIconName; group: string }[] = [
+  { title: 'Home', label: 'Главная', icon: 'imgHouse', group: 'global' },
+  { title: 'Today', label: 'Сегодня', icon: 'imgSun', group: 'global' },
+  { title: 'Workspaces', label: 'Пространства', icon: 'imgPanelsTopLeft1', group: 'global' },
+  { title: 'Reviews', label: 'Повторение', icon: 'imgLayers2', group: 'global' },
+  { title: 'Library', label: 'Источники', icon: 'imgFiles', group: 'workspace' },
+  { title: 'Roadmap', label: 'Дорожная карта', icon: 'imgRoute', group: 'workspace' },
+  { title: 'Knowledge Map', label: 'Карта знаний', icon: 'imgNetwork', group: 'workspace' },
+  { title: 'AI Tutor', label: 'Репетитор', icon: 'imgSparkles', group: 'workspace' },
+  { title: 'Study', label: 'Учебный центр', icon: 'imgGraduationCap', group: 'workspace' },
 ];
+const pageLabels: Record<string, string> = {
+  ...Object.fromEntries(navigation.map((n) => [n.title, n.label])),
+  Settings: 'Настройки',
+  Courses: 'Учебные направления',
+  Dashboard: 'Обзор',
+  Learn: 'Проверка знаний',
+  Flashcards: 'Карточки',
+  Statistics: 'Статистика',
+  'Weak Areas': 'Слабые связи',
+};
 export default function App() {
   const { state: application, ready, error, commit: commitApplication } = useWorkspace();
   const activeId = application.activeWorkspaceId;
   const state = useMemo(() => workspaceView(application, activeId), [application, activeId]);
   const commit: Commit = (change) => commitApplication((s) => mergeWorkspace(s, activeId, change));
-  const [page, setPage] = useState('Today');
+  const [page, setPage] = useState('Home');
   const [searchOpen, setSearchOpen] = useState(false);
   const [sourcePreview, setSourcePreview] = useState({ id: '', request: 0 });
   const [courseId, setCourseId] = useState('');
@@ -92,7 +88,7 @@ export default function App() {
       }));
       setCourseId('');
       setTopicId('');
-      setPage('Dashboard');
+      setPage('Today');
       setNotice('');
     });
   useEffect(() => {
@@ -155,101 +151,161 @@ export default function App() {
   if (!state.settings.onboardingComplete) return <Onboarding state={state} commit={commit} />;
   return (
     <div
-      className="app-shell"
+      className={`app-shell capybara ${page === 'Reviews' ? 'focus-mode' : ''}`}
       data-accent={application.workspaces.find((w) => w.id === activeId)?.accent ?? 'violet'}
     >
+      <WindowBar onError={run} />
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">
-            <GitBranch size={24} />
-          </div>
-          <div>
-            ConceptLoom<small>YOUR LEARNING, CONNECTED</small>
-          </div>
+          <DesignIcon name="imgWaypoints" />
+          <span>ConceptLoom</span>
         </div>
         <label className="workspace-switcher">
-          Workspace
-          <select
-            aria-label="Active workspace"
-            value={activeId}
-            onChange={(e) => openWorkspace(e.target.value)}
-          >
-            {application.workspaces
-              .filter((w) => !w.archived)
-              .map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.icon} {w.name}
-                </option>
-              ))}
-          </select>
-        </label>
-        <nav>
-          {navigation.map((item) => (
-            <button
-              key={item.title}
-              className={
-                page === item.title ||
-                (item.title === 'Study' && ['Learn', 'Flashcards', 'Reviews'].includes(page))
-                  ? 'active'
-                  : ''
-              }
-              onClick={() => setPage(item.title)}
+          <DesignIcon name="imgDatabase" />
+          <span>
+            <small>ПРОСТРАНСТВО</small>
+            <select
+              aria-label="Active workspace"
+              value={activeId}
+              onChange={(e) => openWorkspace(e.target.value)}
             >
-              <item.icon size={18} />
-              <span>{item.title}</span>
-              {item.title === 'Reviews' &&
-                state.cards.some((c) => new Date(c.due) <= new Date()) && <i />}
-            </button>
-          ))}
-        </nav>
+              {application.workspaces
+                .filter((w) => !w.archived)
+                .map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+            </select>
+          </span>
+        </label>
+        {['global', 'workspace'].map((group) => (
+          <nav
+            key={group}
+            aria-label={group === 'global' ? 'Основная навигация' : 'Навигация пространства'}
+          >
+            {group === 'workspace' && (
+              <div className="nav-label">
+                {application.workspaces.find((w) => w.id === activeId)?.name}
+              </div>
+            )}
+            {navigation
+              .filter((n) => n.group === group)
+              .map((item) => (
+                <button
+                  key={item.title}
+                  aria-label={item.label}
+                  className={
+                    page === item.title ||
+                    (item.title === 'Study' && ['Learn', 'Flashcards'].includes(page))
+                      ? 'active'
+                      : ''
+                  }
+                  onClick={() => setPage(item.title)}
+                >
+                  <DesignIcon name={item.icon} active={page === item.title} />
+                  <span>{item.label}</span>
+                  {item.title === 'Reviews' && (
+                    <small className="nav-count">
+                      {state.cards.filter((c) => new Date(c.due) <= new Date()).length}
+                    </small>
+                  )}
+                </button>
+              ))}
+          </nav>
+        ))}
         <div className="sidebar-bottom">
-          <button className="secondary" onClick={() => setSearchOpen(true)}>
-            Search · Ctrl+K
+          <p className="privacy-note">
+            <DesignIcon name="imgShieldCheck" />
+            Ваши знания — на устройстве
+          </p>
+          <button className="settings-link" onClick={() => setPage('Settings')}>
+            <DesignIcon name="imgSettings2" />
+            Настройки
           </button>
           <div className="local-status">
             <span className={connection === 'Local AI ready' ? 'online' : 'offline'} />
             <div>
-              <strong>{connection}</strong>
-              <small>{state.settings.model}</small>
+              <strong>Ollama · {state.settings.model}</strong>
+              <small>
+                {connection === 'Local AI ready'
+                  ? 'Готова'
+                  : connection === 'Model not downloaded'
+                    ? 'Модель не загружена'
+                    : 'Нет подключения'}{' '}
+                · веб-доступ выключен
+              </small>
             </div>
-            <Cpu size={16} />
-          </div>
-          <div className="local-profile">
-            <div>Y</div>
-            <span>
-              Your learning space<small>Private & local</small>
-            </span>
-            <ShieldCheck size={17} />
           </div>
         </div>
       </aside>
       <div className="main-area">
         <div className="topbar">
-          <div className="breadcrumbs">
-            Workspace <span>/</span> <strong>{page}</strong>
-          </div>
+          {page === 'Reviews' ? (
+            <div className="breadcrumbs">
+              <button className="secondary compact" onClick={() => setPage('Study')}>
+                <DesignIcon name="imgArrowLeft" />
+                Учебный центр
+              </button>
+              <strong>Повторение</strong>
+              <span>FSRS</span>
+            </div>
+          ) : (
+            <div className="breadcrumbs">
+              {page === 'Home' || page === 'Workspaces'
+                ? 'Все пространства'
+                : application.workspaces.find((w) => w.id === activeId)?.name}
+              <DesignIcon name="imgChevronRight" />
+              <strong>{pageLabels[page] ?? page}</strong>
+            </div>
+          )}
           <div className="topbar-right">
-            {!isTauri() && <span className="preview-label">Browser preview</span>}
-            {course && (
-              <select
-                aria-label="Active course"
-                value={course.id}
-                onChange={(e) => {
-                  setCourseId(e.target.value);
-                  setTopicId('');
-                }}
-              >
-                {state.courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+            {page === 'Reviews' ? (
+              <button className="text-button" onClick={() => setPage('Study')}>
+                Сохранить и выйти
+              </button>
+            ) : (
+              <>
+                {course && !['Home', 'Workspaces', 'Today', 'Library'].includes(page) && (
+                  <select
+                    aria-label="Active course"
+                    value={course.id}
+                    onChange={(e) => {
+                      setCourseId(e.target.value);
+                      setTopicId('');
+                    }}
+                  >
+                    {state.courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button className="toolbar-search" onClick={() => setSearchOpen(true)}>
+                  <DesignIcon name="imgSearch" />
+                  <span>Поиск по знаниям</span>
+                  <kbd>Ctrl+K</kbd>
+                </button>
+                <button
+                  className="theme-toggle"
+                  aria-label="Сменить тему"
+                  onClick={() =>
+                    run(() =>
+                      commit((s) => ({
+                        ...s,
+                        settings: {
+                          ...s.settings,
+                          theme: s.settings.theme === 'dark' ? 'light' : 'dark',
+                        },
+                      })),
+                    )
+                  }
+                >
+                  <DesignIcon name="imgMoon" />
+                </button>
+              </>
             )}
-            <span className="local-badge">
-              <ShieldCheck size={13} />
-              LOCAL FIRST
-            </span>
           </div>
         </div>
         <main className="page-content" key={activeId}>
@@ -272,7 +328,8 @@ export default function App() {
               edit={() => setPage('Knowledge Map')}
             />
           )}
-          {page === 'Home' && (
+          {page === 'Home' && <Home state={application} navigate={setPage} open={openWorkspace} />}
+          {page === 'Workspaces' && (
             <Workspaces
               state={application}
               commit={commitApplication}

@@ -36,20 +36,21 @@ test.beforeEach(async ({ page }) => {
     });
   }
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'Источники', exact: true }).click();
 });
 
 test('pasted text over 20,000 characters saves without a title and survives reload', async ({
   page,
 }) => {
   const copied = `Copied learning material\n${'한국어 Русский English\n'.repeat(1500)}`;
-  await page.getByLabel('Copied text / notes').fill(copied);
-  await page.getByRole('button', { name: 'Add text to library' }).click();
+  await page.getByRole('button', { name: 'Вставить текст', exact: true }).first().click();
+  await page.getByLabel('Скопированный текст / заметки').fill(copied);
+  await page.getByRole('button', { name: 'Добавить в библиотеку' }).click();
   await expect(
     page.getByRole('heading', { name: 'Copied learning material', exact: true }),
   ).toBeVisible();
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'Источники', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Copied learning material', exact: true }),
   ).toBeVisible();
@@ -76,7 +77,7 @@ test('extracts PDF text offline with bundled worker and handles corrupt PDF grac
     .getByLabel('Import learning material')
     .setInputFiles(fileURLToPath(new URL('./fixtures/helloworld.pdf', import.meta.url)));
   await expect(page.getByRole('heading', { name: 'helloworld.pdf', exact: true })).toBeVisible();
-  await expect(page.locator('.note-content')).toContainText(/Hello, world/i);
+  await expect(page.locator('.document-paper')).toContainText(/Hello, world/i);
   expect(externalRequests).toEqual([]);
   await page.getByLabel('Import learning material').setInputFiles({
     name: 'broken.pdf',

@@ -70,8 +70,8 @@ export function Dashboard({
           </h2>
           <p>
             {plan[0]
-              ? `Your next connection: ${plan[0].topic.title}`
-              : 'Start with a goal. Discover what you know. Find your next connection.'}
+              ? `Ваша следующая связь: ${plan[0].topic.title}`
+              : 'Выберите цель. Проверьте, что вы знаете. Найдите следующую связь.'}
           </p>
           <button
             className="primary"

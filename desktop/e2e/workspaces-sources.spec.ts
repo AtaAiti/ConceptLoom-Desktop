@@ -101,52 +101,64 @@ test('workspace → PDF → source route → lesson → evidence → FSRS surviv
       });
     });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Home', exact: true }).click();
-  await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
-  await page.getByLabel('Workspace name', { exact: true }).fill('University 2026');
-  await page.getByRole('button', { name: 'Save workspace' }).click();
+  await page.getByRole('button', { name: 'Пространства', exact: true }).click();
+  await page.getByRole('button', { name: 'Создать пространство', exact: true }).click();
+  await page.getByLabel('Название пространства', { exact: true }).fill('University 2026');
+  await page.getByRole('button', { name: 'Сохранить пространство' }).click();
   await expect(page.getByLabel('Active workspace')).toContainText('University 2026');
-  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'Источники', exact: true }).click();
   await page.getByLabel('New library name').fill('Lecture slides');
-  await page.getByRole('button', { name: 'Create library' }).click();
+  await page.getByRole('button', { name: '+ Новая библиотека' }).click();
   await page
     .getByLabel('Import learning material')
     .setInputFiles(fileURLToPath(new URL('./fixtures/helloworld.pdf', import.meta.url)));
   await expect(page.getByRole('heading', { name: 'helloworld.pdf', exact: true })).toBeVisible();
-  await page.screenshot({ path: 'test-results/sources-1366.png', fullPage: true, animations: 'disabled' });
+  await page.screenshot({
+    path: 'test-results/sources-1366.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
   await page.getByLabel('Search source text').fill('Hello');
-  await page.getByRole('button', { name: 'Search sources' }).click();
-  await expect(page.locator('.search-result')).toContainText('p. 1');
-  await page.getByRole('button', { name: 'Courses', exact: true }).click();
-  await page.getByRole('button', { name: 'Create course', exact: true }).click();
-  await page.getByLabel('Course name', { exact: true }).fill('Document study');
-  await page.getByLabel('Subject kind').selectOption('general');
-  await page.getByLabel('What do you want to be able to do?').fill('Understand Hello world');
-  await page.locator('form').getByRole('button', { name: 'Create course', exact: true }).click();
-  await page.getByRole('button', { name: 'Open map', exact: true }).click();
+  await page.getByRole('button', { name: 'Найти' }).click();
+  await expect(page.locator('.search-result')).toContainText('с. 1');
+  await page.getByRole('button', { name: 'Учебный центр', exact: true }).click();
+  await page.getByRole('button', { name: 'Учебные направления →', exact: true }).click();
+  await page.getByRole('button', { name: 'Создать направление', exact: true }).click();
+  await page.getByLabel('Название направления', { exact: true }).fill('Document study');
+  await page.getByLabel('Тип предмета').selectOption('general');
+  await page.getByLabel('Чему вы хотите научиться?').fill('Understand Hello world');
+  await page
+    .locator('form')
+    .getByRole('button', { name: 'Создать направление', exact: true })
+    .click();
+  await page.getByRole('button', { name: 'Открыть карту', exact: true }).click();
   await page.getByLabel('Source scope').selectOption('all');
-  await page.getByRole('button', { name: 'Suggest a route' }).click();
-  await page.getByRole('button', { name: 'Accept route' }).click();
-  await page.getByRole('button', { name: 'Roadmap', exact: true }).click();
+  await page.getByRole('button', { name: 'Предложить маршрут' }).click();
+  await page.getByRole('button', { name: 'Принять маршрут' }).click();
+  await page.getByRole('button', { name: 'Дорожная карта', exact: true }).click();
   await expect(page.getByRole('heading', { name: '1. Hello world' })).toBeVisible();
-  await page.setViewportSize({width:1920,height:1080});
-  await page.screenshot({ path:'test-results/roadmap-1920.png',fullPage:true,animations:'disabled' });
-  await page.setViewportSize({width:1366,height:768});
-  await page.getByRole('button', { name: 'Open lesson', exact: true }).click();
-  await page.getByRole('button', { name: 'Create local lesson' }).click();
-  await expect(page.getByRole('heading', { name: 'Locate your knowledge frontier' })).toBeVisible();
-  await page.getByRole('button', { name: 'helloworld.pdf · p. 1', exact: true }).click();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.screenshot({
+    path: 'test-results/roadmap-1920.png',
+    fullPage: true,
+    animations: 'disabled',
+  });
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.getByRole('button', { name: 'Открыть занятие', exact: true }).click();
+  await page.getByRole('button', { name: 'Подготовить занятие' }).click();
+  await expect(page.getByRole('heading', { name: 'Найдите границу знаний' })).toBeVisible();
+  await page.getByRole('button', { name: 'helloworld.pdf · с. 1', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Source excerpt' })).toContainText('Hello, world!');
-  await page.getByRole('button', { name: 'Close excerpt' }).click();
+  await page.getByRole('button', { name: 'Закрыть фрагмент' }).click();
   await page.getByRole('button', { name: /^[AB] Hello, world!$/ }).click();
-  await page.getByRole('button', { name: 'Check understanding' }).click();
-  await expect(page.getByText('Connection demonstrated.', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Study', exact: true }).click();
-  await page.getByRole('button', { name: 'Reviews', exact: true }).click();
-  await page.getByRole('button', { name: 'Reveal answer' }).click();
-  await page.getByRole('button', { name: 'Easy', exact: true }).click();
+  await page.getByRole('button', { name: 'Проверить понимание' }).click();
+  await expect(page.getByText('Понимание подтверждено.', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Учебный центр', exact: true }).click();
+  await page.getByRole('button', { name: /^Карточки · FSRS/ }).click();
+  await page.getByRole('button', { name: 'Открыть ответ' }).click();
+  await page.getByRole('button', { name: /^Легко/ }).click();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Your next study session.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Хороший день для новой связи' })).toBeVisible();
   const persisted = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('conceptloom-desktop-preview-v1')!),
   );
@@ -158,14 +170,17 @@ test('workspace → PDF → source route → lesson → evidence → FSRS surviv
   await page.keyboard.press('Control+k');
   await page.getByRole('textbox', { name: 'Search and commands' }).fill('helloworld');
   await page.getByRole('button', { name: 'Source · helloworld.pdf', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Source preview' })).toContainText('Hello, world!');
-  await page.getByRole('button', { name: 'Close preview' }).click();
+  await expect(page.getByRole('dialog', { name: 'Предпросмотр источника' })).toContainText(
+    'Hello, world!',
+  );
+  await page.getByRole('button', { name: 'Закрыть просмотр' }).click();
   await page.getByLabel('Active workspace').selectOption('my-learning');
-  await page.getByRole('button', { name: 'Library', exact: true }).click();
+  await page.getByRole('button', { name: 'Источники', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'helloworld.pdf', exact: true }),
   ).not.toBeVisible();
-  await page.getByRole('button', { name: 'Courses', exact: true }).click();
+  await page.getByRole('button', { name: 'Учебный центр', exact: true }).click();
+  await page.getByRole('button', { name: 'Учебные направления →', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Document study', exact: true }),
   ).not.toBeVisible();

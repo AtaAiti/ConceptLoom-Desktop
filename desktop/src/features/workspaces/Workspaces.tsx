@@ -31,8 +31,8 @@ export function Workspaces({
     <>
       <PageHeading
         eyebrow="HOME / YOUR LEARNING"
-        title="A place for every curiosity."
-        description={`${due} reviews due across your workspaces · ${stats.streak} day streak · daily goal ${state.settings.dailyMinutes} minutes`}
+        title="Пространства для ваших интересов"
+        description={`${due} карточек к повторению · ${stats.streak} дн. подряд · дневная цель ${state.settings.dailyMinutes} мин`}
         action={
           <button
             className="primary"
@@ -48,7 +48,7 @@ export function Workspaces({
               });
             }}
           >
-            Create workspace
+            Создать пространство
           </button>
         }
       />
@@ -64,32 +64,32 @@ export function Workspaces({
             return (
               <Panel key={w.id} title={`${w.icon} ${w.name}`}>
                 <p className="muted">
-                  {w.description || w.goal || 'Your materials, connections and practice.'}
+                  {w.description || w.goal || 'Ваши материалы, связи и практика.'}
                 </p>
                 <p className="small">
-                  {courses.length} study paths ·{' '}
-                  {state.sources.filter((s) => s.workspaceId === w.id).length} sources ·{' '}
+                  {courses.length} направлений ·{' '}
+                  {state.sources.filter((s) => s.workspaceId === w.id).length} источников ·{' '}
                   {
                     state.cards.filter((c) => ids.has(c.courseId) && new Date(c.due) <= new Date())
                       .length
                   }{' '}
-                  reviews due
+                  к повторению
                 </p>
-                {w.archived && <span className="status-pill">Archived</span>}
+                {w.archived && <span className="status-pill">В архиве</span>}
                 <div className="button-row">
                   {!w.archived && (
                     <button className="primary compact" onClick={() => open(w.id)}>
-                      Open workspace
+                      Открыть пространство
                     </button>
                   )}
                   <button className="secondary" onClick={() => setEdit(w)}>
-                    Edit
+                    Изменить
                   </button>
                   <button
                     className="text-button"
                     onClick={() => run(() => update({ ...w, pinned: !w.pinned }))}
                   >
-                    {w.pinned ? 'Unpin' : 'Pin'}
+                    {w.pinned ? 'Открепить' : 'Закрепить'}
                   </button>
                   <button
                     className="text-button"
@@ -99,7 +99,7 @@ export function Workspaces({
                           (x) => x.id !== w.id && !x.archived,
                         );
                         if (!w.archived && !replacement)
-                          throw new Error('Keep at least one active workspace.');
+                          throw new Error('Оставьте хотя бы одно активное пространство.');
                         await commit((s) => ({
                           ...s,
                           workspaces: s.workspaces.map((x) =>
@@ -113,7 +113,7 @@ export function Workspaces({
                       })
                     }
                   >
-                    {w.archived ? 'Restore' : 'Archive'}
+                    {w.archived ? 'Восстановить' : 'В архив'}
                   </button>
                   <button
                     className="text-button danger"
@@ -122,7 +122,7 @@ export function Workspaces({
                       setConfirmation('');
                     }}
                   >
-                    Delete
+                    Удалить
                   </button>
                 </div>
               </Panel>
@@ -134,7 +134,7 @@ export function Workspaces({
           <form
             className="modal"
             role="dialog"
-            aria-label="Workspace details"
+            aria-label="Детали пространства"
             onSubmit={(e) => {
               e.preventDefault();
               run(async () => {
@@ -151,8 +151,8 @@ export function Workspaces({
               });
             }}
           >
-            <h2>Workspace details</h2>
-            <Field label="Workspace name">
+            <h2>Детали пространства</h2>
+            <Field label="Название пространства">
               <input
                 autoFocus
                 required
@@ -161,28 +161,28 @@ export function Workspaces({
                 onChange={(e) => setEdit({ ...edit, name: e.target.value })}
               />
             </Field>
-            <Field label="Description">
+            <Field label="Описание">
               <textarea
                 maxLength={2000}
                 value={edit.description}
                 onChange={(e) => setEdit({ ...edit, description: e.target.value })}
               />
             </Field>
-            <Field label="Learning goal">
+            <Field label="Цель обучения">
               <textarea
                 maxLength={2000}
                 value={edit.goal}
                 onChange={(e) => setEdit({ ...edit, goal: e.target.value })}
               />
             </Field>
-            <Field label="Icon">
+            <Field label="Значок">
               <input
                 maxLength={8}
                 value={edit.icon}
                 onChange={(e) => setEdit({ ...edit, icon: e.target.value })}
               />
             </Field>
-            <Field label="Accent">
+            <Field label="Акцент">
               <select
                 value={edit.accent}
                 onChange={(e) =>
@@ -195,9 +195,9 @@ export function Workspaces({
               </select>
             </Field>
             <div className="button-row">
-              <button className="primary">Save workspace</button>
+              <button className="primary">Сохранить пространство</button>
               <button type="button" className="secondary" onClick={() => setEdit(null)}>
-                Cancel
+                Отмена
               </button>
             </div>
           </form>
@@ -205,13 +205,13 @@ export function Workspaces({
       )}
       {deleting && (
         <div className="modal-backdrop">
-          <section className="modal" role="dialog" aria-label="Delete workspace">
-            <h2>Delete {deleting.name}?</h2>
+          <section className="modal" role="dialog" aria-label="Удалить пространство">
+            <h2>Удалить {deleting.name}?</h2>
             <p>
-              All its sources, paths, cards and learning history will be permanently removed. Type
-              the workspace name to confirm.
+              Все источники, направления, карточки и история обучения этого пространства будут
+              удалены. Введите его название для подтверждения.
             </p>
-            <Field label="Confirm workspace name">
+            <Field label="Подтвердите название пространства">
               <input value={confirmation} onChange={(e) => setConfirmation(e.target.value)} />
             </Field>
             <div className="button-row">
@@ -225,10 +225,10 @@ export function Workspaces({
                   })
                 }
               >
-                Permanently delete
+                Удалить навсегда
               </button>
               <button className="secondary" onClick={() => setDeleting(null)}>
-                Cancel
+                Отмена
               </button>
             </div>
           </section>
