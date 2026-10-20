@@ -111,8 +111,8 @@ approach while retaining a native desktop learning interface.
 
 ## Validation on Windows
 
-- 27 TypeScript unit tests passed; the two pre-existing optional SQLite checks
-  remain skipped by the ordinary Vitest run on this Node configuration.
+- 27 TypeScript unit tests passed; the two pre-existing opt-in Ollama integration
+  checks remain skipped by the ordinary Vitest run (`OLLAMA_INTEGRATION` is unset).
 - 13 Rust tests passed, including saved consent enforcement, model/argument
   validation, tool restrictions, output limits, protocol errors and persistence.
 - The opt-in native Codex test passed with a real saved ChatGPT account and a
