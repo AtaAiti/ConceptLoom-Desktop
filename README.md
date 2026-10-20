@@ -4,7 +4,7 @@
 
 # Concept Loom
 
-## ConceptLoom Desktop 0.2.1
+## ConceptLoom Desktop 0.3.0
 
 The new [Windows desktop application](desktop/README.md) adds an original React
 interface, local Ollama tutoring (`qwen3:4b` by default), SQLite storage, dependency
@@ -21,6 +21,8 @@ source list/page preview, native window controls and focused card review.
 See [design details](docs/capybara-design.md).
 
 Start desktop development with `cd desktop`, `npm ci`, and `npm run desktop`.
+Version 0.3.0 adds optional account-based AI through the official Codex, Claude
+Code and Gemini CLI clients, alongside Ollama. See [setup and privacy](docs/account-providers.md).
 See [the repository inspection and implementation plan](docs/desktop-plan.md) for
 methodology reuse, architecture, milestones and verification. The desktop README
 documents Windows build requirements, privacy, storage and current limitations.

@@ -1,8 +1,20 @@
 # ConceptLoom Desktop
 
 A Windows desktop implementation of ConceptLoom's connection-first
-learning workflow. Free, MIT licensed, local-first, powered by Ollama. No account,
-subscription, paid API, telemetry or cloud backend.
+learning workflow. Free, MIT licensed and local-first. Use Ollama offline, or connect
+ChatGPT, Claude or Gemini through an existing account in an official CLI client.
+Account access, available models and usage limits depend on the selected service.
+
+## New in 0.3.0
+
+Settings now offers Ollama, ChatGPT via Codex, Claude via Claude Code, and Gemini
+via Google login. Each provider remembers its model; switching back preserves the
+Ollama URL and model. Install a supported official client, sign in, test a generic
+response, allow context transfer, and save. No API key or token is copied into the
+application. Account connections require the installed Windows app and internet;
+managed client installation requires Node.js 22+ with npm.
+
+See [account setup, privacy and implementation limits](../docs/account-providers.md).
 
 ## New in 0.2.1
 
@@ -32,11 +44,11 @@ See [iteration scope, architecture and remaining work](../docs/workspaces-source
 - Course creation, editing, goals, prior knowledge, explanation language and deletion.
 - Interactive React Flow map, manual concept/dependency editing, validated DAGs,
   learner acceptance of AI-proposed routes, evidence-gated prerequisites.
-- Local structured lessons: concept, explanation, connections, examples, practice,
+- Structured lessons from the chosen AI: concept, explanation, connections, examples, practice,
   mini quiz, mistakes, summary, generated cards and next concept.
 - Diagnose prior knowledge before showing lesson explanations. Recognition,
   recall, application and transfer evidence determine mastery; reading earns none.
-- Deterministic answer checks where possible, local rubric grading for open
+- Deterministic answer checks where possible, AI rubric grading for open
   responses, explicit “I don't know yet” and confidence calibration.
 - Manual/automatic flashcards and real `ts-fsrs` scheduling with Again/Hard/Good/Easy.
 - Course-aware tutor with mistakes, evidence, resume points and due reviews. Source context is explicitly selected; notes are no longer automatically concatenated into prompts.
@@ -48,8 +60,8 @@ This is an initial implementation, not an audited stable release. AI-generated
 subject matter still needs human judgment. Responses are schema-validated; this
 does not establish factual correctness. No PDF OCR, voice exercises, LM Studio
 adapter, export/import of legacy MCP notebooks, or automatic model downloads in
-the app yet. Build downloads require internet; installed runtime needs only the
-already downloaded Ollama model. Browser preview uses separate browser storage.
+the app yet. Offline AI needs an already downloaded Ollama model; account providers
+need internet and a compatible official client. Browser preview uses separate browser storage.
 
 ## Screenshot
 
@@ -58,7 +70,8 @@ course. Automated UI checks write `test-results/dashboard.png` (not tracked).
 
 ## Windows requirements
 
-For use: Windows 11 with WebView2, Ollama, and a downloaded model. Recommended
+For use: Windows 11 with WebView2 and either Ollama with a downloaded model or
+an official account client. For local inference, recommended
 starting point: 16 GB RAM and `qwen3:4b`. Actual speed depends on Ollama's hardware
 support; AMD graphics acceleration is not assumed.
 
@@ -96,7 +109,7 @@ npm run package  # native Windows NSIS installer
 ```
 
 For an initial debug installer use `npx tauri build --debug`. It is written to
-`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.2.1_x64-setup.exe`.
+`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.3.0_x64-setup.exe`.
 The default release package is written under `src-tauri/target/release/bundle/nsis`.
 Installers are unsigned local development builds.
 
@@ -117,10 +130,15 @@ loads an application snapshot; lazy workspace reads remain planned.
 Do not move or edit a live database. Back up the database directory after closing
 the app, including WAL/SHM files if present. Storage is private by locality, not
 encrypted at rest. Native diagnostics go to stderr during development and never
-send data anywhere. Imported notes and AI conversations remain local.
+send data anywhere. Imported notes, sources and AI conversations are saved locally.
+With account providers, selected excerpts, learner answers and conversation context
+are sent to that service after explicit consent in Settings. Official clients may
+also retain their own logs/history under their normal service rules. The desktop
+does not extract account tokens or synchronize its SQLite database to a backend.
 
 Library → Import PDF / TXT / Markdown reads PDF text locally using a bundled
-PDF.js worker, fonts and CMaps. No document is uploaded and no CDN is contacted.
+PDF.js worker, fonts and CMaps. Import itself uploads nothing and contacts no CDN;
+later AI requests may send selected text excerpts when an account provider is enabled.
 PDF limits: 25 MB and 300 pages. Scanned PDFs without selectable text need OCR
 before importing; password-protected PDFs need an unlocked copy. The extracted
 text is saved in SQLite; the original PDF binary is not copied into the library.

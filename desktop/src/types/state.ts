@@ -198,7 +198,16 @@ export const settingsSchema = z.object({
   uiLanguage: z.enum(['en', 'ru']).optional(),
   reducedMotion: z.boolean().optional(),
   theme: z.enum(['dark', 'light']),
-  provider: z.literal('ollama'),
+  provider: z.enum(['ollama', 'codex', 'claude', 'gemini']),
+  accountDataConsent: z.boolean().default(false),
+  providerModels: z
+    .object({
+      ollama: z.string().max(200).optional(),
+      codex: z.string().max(200).optional(),
+      claude: z.string().max(200).optional(),
+      gemini: z.string().max(200).optional(),
+    })
+    .default({}),
   endpoint: z.string().min(1),
   model: text.max(200),
   explanationLanguage: text.max(100),
@@ -235,6 +244,8 @@ export const emptyWorkspace = (): Workspace => ({
   settings: {
     theme: 'dark',
     provider: 'ollama',
+    accountDataConsent: false,
+    providerModels: {},
     endpoint: 'http://localhost:11434',
     model: 'qwen3:4b',
     explanationLanguage: 'Russian',

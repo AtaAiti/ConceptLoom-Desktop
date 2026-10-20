@@ -28,7 +28,7 @@ export function parseResponse<T>(raw: string, schema: z.ZodType<T>): T {
   } catch (error) {
     console.error('Invalid structured AI response', error);
     throw new Error(
-      'The local model returned an invalid response. Try again or choose another model.',
+      'Модель вернула неверный ответ. Попробуйте снова или выберите другую модель.',
     );
   }
 }

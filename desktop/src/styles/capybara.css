@@ -454,7 +454,9 @@
 .workspace-card .status-pill {
   margin-top: 9px;
 }
-.workspace-card > small { display:block; }
+.workspace-card > small {
+  display: block;
+}
 .activity-row {
   display: flex;
   gap: 10px;
@@ -1105,4 +1107,33 @@
   .toolbar-search kbd {
     display: none;
   }
+}
+.account-connection {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+.account-status {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.account-status span {
+  color: var(--muted);
+}
+.account-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--surface);
+  line-height: 1.6;
+}
+.account-consent input {
+  width: 18px;
+  min-width: 18px;
+  margin-top: 5px;
 }

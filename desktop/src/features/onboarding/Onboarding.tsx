@@ -38,7 +38,7 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
             <p>
               Welcome to ConceptLoom Desktop.
               <br />
-              Your private local AI learning environment.
+              Your learning environment with a choice of AI providers.
             </p>
             <div className="welcome-features">
               <span>
@@ -47,11 +47,11 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
               </span>
               <span>
                 <Cpu />
-                Learn with local AI
+                Learn with your chosen AI
               </span>
               <span>
                 <ShieldCheck />
-                Your data stays on your computer
+                Progress saved on your computer
               </span>
             </div>
             <button className="primary" onClick={next}>
@@ -101,7 +101,8 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
               Continue <ArrowRight size={16} />
             </button>
             <p className="muted small">
-              You can organize courses offline and connect your tutor later.
+              You can continue without Ollama. Connect ChatGPT, Claude or Gemini through your
+              account in Settings after setup.
             </p>
           </>
         )}
@@ -231,7 +232,9 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
           </button>
         )}
       </div>
-      <p className="onboarding-foot">No account. No subscription. Just you and what comes next.</p>
+      <p className="onboarding-foot">
+        Ollama works offline. Account providers are optional and available in Settings.
+      </p>
     </main>
   );
 }

@@ -4,7 +4,7 @@ import { DesignIcon, type DesignIconName } from './components/DesignIcon';
 import { WindowBar } from './components/WindowBar';
 import { Home } from './features/dashboard/Home';
 import { useWorkspace } from './hooks/useWorkspace';
-import { OllamaProvider } from './ai/providers/ollama';
+import { createProvider, accountStatus, providerNames } from './ai/providers/accounts';
 import { errorMessage } from './components/ui';
 import { Dashboard } from './features/dashboard/Dashboard';
 import { Courses } from './features/courses/Courses';
@@ -60,10 +60,7 @@ export default function App() {
   const [topicId, setTopicId] = useState('');
   const [notice, setNotice] = useState('');
   const [connection, setConnection] = useState('Checking local AI…');
-  const provider = useMemo(
-    () => new OllamaProvider(state.settings.endpoint, state.settings.model),
-    [state.settings.endpoint, state.settings.model],
-  );
+  const provider = useMemo(() => createProvider(state.settings), [state.settings]);
   const course = state.courses.find((c) => c.id === courseId) ?? state.courses[0];
   const topic =
     state.topics.find((t) => t.id === topicId && t.courseId === course?.id) ??
@@ -111,17 +108,34 @@ export default function App() {
   useEffect(() => {
     let active = true;
     const check = () =>
-      provider
-        .models()
-        .then((models) => {
-          if (active)
-            setConnection(
-              models.includes(state.settings.model) ? 'Local AI ready' : 'Model not downloaded',
-            );
-        })
-        .catch(() => {
-          if (active) setConnection('Local AI offline');
-        });
+      state.settings.provider !== 'ollama'
+        ? accountStatus(state.settings.provider)
+            .then((status) => {
+              if (active)
+                setConnection(
+                  !status.compatible
+                    ? 'Клиент недоступен'
+                    : status.login === 'account'
+                      ? 'Аккаунт подключён'
+                      : status.login === 'unknown'
+                        ? 'Клиент готов · вход через Google'
+                        : 'Проверьте вход в настройках',
+                );
+            })
+            .catch(() => {
+              if (active) setConnection('Проверьте вход в настройках');
+            })
+        : provider
+            .models()
+            .then((models) => {
+              if (active)
+                setConnection(
+                  models.includes(state.settings.model) ? 'Local AI ready' : 'Model not downloaded',
+                );
+            })
+            .catch(() => {
+              if (active) setConnection('Local AI offline');
+            });
     void check();
     const timer = window.setInterval(() => {
       void check();
@@ -130,7 +144,7 @@ export default function App() {
       active = false;
       window.clearInterval(timer);
     };
-  }, [provider, state.settings.model]);
+  }, [provider, state.settings.model, state.settings.provider]);
   if (error)
     return (
       <main className="fatal">
@@ -217,23 +231,34 @@ export default function App() {
         <div className="sidebar-bottom">
           <p className="privacy-note">
             <DesignIcon name="imgShieldCheck" />
-            Ваши знания — на устройстве
+            {state.settings.provider === 'ollama'
+              ? 'Ваши знания — на устройстве'
+              : 'ИИ через выбранный аккаунт'}
           </p>
           <button className="settings-link" onClick={() => setPage('Settings')}>
             <DesignIcon name="imgSettings2" />
             Настройки
           </button>
           <div className="local-status">
-            <span className={connection === 'Local AI ready' ? 'online' : 'offline'} />
+            <span
+              className={
+                ['Local AI ready', 'Аккаунт подключён'].includes(connection) ? 'online' : 'offline'
+              }
+            />
             <div>
-              <strong>Ollama · {state.settings.model}</strong>
+              <strong>
+                {providerNames[state.settings.provider].split(' · ')[0]} ·{' '}
+                {state.settings.model === 'default' ? 'Авто' : state.settings.model}
+              </strong>
               <small>
-                {connection === 'Local AI ready'
-                  ? 'Готова'
-                  : connection === 'Model not downloaded'
-                    ? 'Модель не загружена'
-                    : 'Нет подключения'}{' '}
-                · веб-доступ выключен
+                {state.settings.provider !== 'ollama'
+                  ? connection
+                  : connection === 'Local AI ready'
+                    ? 'Готова'
+                    : connection === 'Model not downloaded'
+                      ? 'Модель не загружена'
+                      : 'Нет подключения'}{' '}
+                · без веб-инструментов
               </small>
             </div>
           </div>
