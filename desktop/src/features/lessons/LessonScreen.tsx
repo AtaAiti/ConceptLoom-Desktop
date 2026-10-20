@@ -170,7 +170,7 @@ export function LessonScreen({
         <Panel>
           <Empty
             title="Разберём это понятие"
-            description="Локальная модель подготовит объяснение и задания. Прогресс меняют ваши ответы."
+            description="Выбранная модель ИИ подготовит объяснение и задания. Прогресс меняют ваши ответы."
           >
             <button
               className="primary"

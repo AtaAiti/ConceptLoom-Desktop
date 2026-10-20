@@ -124,7 +124,8 @@ export function Citations({ citations = [] }: { citations?: SourceCitation[] }) 
             </h2>
             <p className="prose">{opened.excerpt}</p>
             <p className="muted small">
-              Passage supplied to the local model. Check its interpretation against this evidence.
+              Passage supplied to the selected AI model. Check its interpretation against this
+              evidence.
             </p>
             <button autoFocus className="secondary" onClick={() => setOpened(null)}>
               Закрыть фрагмент

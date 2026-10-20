@@ -70,7 +70,7 @@ export function Flashcards({
       {!cards.length && (
         <Empty
           title="Your memory starts with a question"
-          description="Create a card, or let your local tutor generate cards from a lesson."
+          description="Create a card, or let your AI tutor generate cards from a lesson."
         />
       )}
       {edit && (

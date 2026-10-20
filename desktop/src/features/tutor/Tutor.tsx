@@ -37,7 +37,7 @@ export function Tutor({
   return (
     <>
       <PageHeading
-        eyebrow="YOUR LOCAL AI / TUTOR"
+        eyebrow="ВАШ ИИ / РЕПЕТИТОР"
         title={topic?.title ?? 'Репетитор'}
         description="Репетитор · одна связь за раз · объяснение с опорой на ваши материалы"
       />
@@ -55,12 +55,12 @@ export function Tutor({
             )}
             {history.map((message) => (
               <article key={message.id} className={`message ${message.role}`}>
-                <span>{message.role === 'assistant' ? 'CONCEPTLOOM · LOCAL' : 'YOU'}</span>
+                <span>{message.role === 'assistant' ? 'CONCEPTLOOM' : 'YOU'}</span>
                 <p className="prose">{message.content}</p>
                 <Citations citations={message.citations} />
               </article>
             ))}
-            {working && <p className="muted">Локальная модель ищет связь…</p>}
+            {working && <p className="muted">ИИ ищет связь…</p>}
           </div>
           <form
             className="tutor-input"

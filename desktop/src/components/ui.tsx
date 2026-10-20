@@ -98,7 +98,7 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 export function errorMessage(error: unknown): string {
   console.error(error);
   if (error instanceof Error && error.name === 'ZodError')
-    return 'Could not validate this data. Check your input or retry the local model.';
+    return 'Could not validate this data. Check your input or retry the selected AI model.';
   return error instanceof Error
     ? error.message
     : typeof error === 'string'
