@@ -1,5 +1,7 @@
-import { mkdir, readFile, readdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, rename, writeFile, rm, rmdir } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { dirname, join, resolve } from "node:path";
+import { validateRealPath } from "./notebook.mjs";
 
 const PHASES = new Set(["locate", "weave", "build", "transfer", "review", "complete"]);
 const MODES = new Set(["guided", "practice", "review", "challenge"]);
@@ -74,7 +76,38 @@ async function readState(path) {
   }
 }
 
+async function withSessionLock(baseDirectory, sessionId, operation) {
+  const destination = statePath(baseDirectory, sessionId);
+  await validateRealPath(baseDirectory, destination);
+  await mkdir(dirname(destination), { recursive: true });
+  await validateRealPath(baseDirectory, destination);
+  const lock = `${destination}.lock`;
+  const deadline = Date.now() + 5000;
+  for (;;) {
+    try {
+      await mkdir(lock);
+      break;
+    } catch (error) {
+      if (error?.code !== "EEXIST") throw error;
+      if (Date.now() >= deadline)
+        throw new Error(
+          `Session is busy. Retry after other clients finish. If all clients are closed, remove the stale lock: ${lock}`,
+        );
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, 25));
+    }
+  }
+  try {
+    return await operation();
+  } finally {
+    await rmdir(lock);
+  }
+}
+
 export async function saveLearningState(baseDirectory, input) {
+  return withSessionLock(baseDirectory, input.sessionId, () => saveUnlocked(baseDirectory, input));
+}
+
+async function saveUnlocked(baseDirectory, input) {
   const sessionId = safeSessionId(input.sessionId);
   const destination = statePath(baseDirectory, sessionId);
   const previous = await readState(destination);
@@ -107,16 +140,23 @@ export async function saveLearningState(baseDirectory, input) {
   };
 
   await mkdir(dirname(destination), { recursive: true });
-  const temporary = `${destination}.${process.pid}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, "utf8");
-  await rename(temporary, destination);
+  const temporary = `${destination}.${randomUUID()}.tmp`;
+  try {
+    await writeFile(temporary, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+    await rename(temporary, destination);
+  } finally {
+    await rm(temporary, { force: true });
+  }
   return state;
 }
 
 export async function loadLearningState(baseDirectory, input = {}) {
+  await validateRealPath(baseDirectory, storageDirectory(baseDirectory));
   if (input.sessionId) {
     const sessionId = safeSessionId(input.sessionId);
-    const state = await readState(statePath(baseDirectory, sessionId));
+    const path = statePath(baseDirectory, sessionId);
+    await validateRealPath(baseDirectory, path);
+    const state = await readState(path);
     if (!state) throw new Error(`learning session '${sessionId}' was not found`);
     return { state };
   }
@@ -130,7 +170,15 @@ export async function loadLearningState(baseDirectory, input = {}) {
     throw error;
   }
 
-  const states = (await Promise.all(names.map((name) => readState(join(directory, name)))))
+  const states = (
+    await Promise.all(
+      names.map(async (name) => {
+        const path = join(directory, name);
+        await validateRealPath(baseDirectory, path);
+        return readState(path);
+      }),
+    )
+  )
     .filter(Boolean)
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   return {
@@ -177,20 +225,25 @@ function addUnique(items, value) {
 }
 
 export async function recordCheckpointAssessment(baseDirectory, input, assessment) {
+  return withSessionLock(baseDirectory, input.sessionId, () => recordUnlocked(baseDirectory, input, assessment));
+}
+
+async function recordUnlocked(baseDirectory, input, assessment) {
   const sessionId = safeSessionId(input.sessionId);
   const { state: previous } = await loadLearningState(baseDirectory, { sessionId });
   const securedConnection = optionalText(input.securedConnection, "securedConnection");
   const gap = optionalText(input.gap, "gap");
-  const secured = assessment.outcome === "accurate"
-    ? addUnique(previous.secured ?? [], securedConnection)
-    : previous.secured ?? [];
-  const gaps = assessment.outcome === "knowledge-gap"
-    ? addUnique(previous.gaps ?? [], gap ?? input.currentStep ?? previous.currentStep)
-    : previous.gaps ?? [];
-  const evidenceConcept = optionalText(input.evidenceConcept, "evidenceConcept")
-    ?? securedConnection
-    ?? input.currentStep
-    ?? previous.currentStep;
+  const secured =
+    assessment.outcome === "accurate" ? addUnique(previous.secured ?? [], securedConnection) : (previous.secured ?? []);
+  const gaps =
+    assessment.outcome === "knowledge-gap"
+      ? addUnique(previous.gaps ?? [], gap ?? input.currentStep ?? previous.currentStep)
+      : (previous.gaps ?? []);
+  const evidenceConcept =
+    optionalText(input.evidenceConcept, "evidenceConcept") ??
+    securedConnection ??
+    input.currentStep ??
+    previous.currentStep;
   const evidence = { ...(previous.evidence ?? {}) };
   if (evidenceConcept) {
     const earlier = evidence[evidenceConcept] ?? {};
@@ -211,14 +264,13 @@ export async function recordCheckpointAssessment(baseDirectory, input, assessmen
       hintUsed: input.hintUsed === true,
       transferPassed: earlier.transferPassed === true || (format === "transfer" && assessment.outcome === "accurate"),
       lastAttemptAt: new Date().toISOString(),
-      lastSuccessfulRetrieval: assessment.outcome === "accurate"
-        ? new Date().toISOString()
-        : earlier.lastSuccessfulRetrieval,
+      lastSuccessfulRetrieval:
+        assessment.outcome === "accurate" ? new Date().toISOString() : earlier.lastSuccessfulRetrieval,
       reviewAfter: nextReviewDate(consecutiveSuccesses, assessment.outcome),
     };
   }
 
-  return saveLearningState(baseDirectory, {
+  return saveUnlocked(baseDirectory, {
     ...previous,
     currentStep: input.currentStep ?? previous.currentStep,
     nextStep: requiredText(input.nextStep, "nextStep"),
@@ -239,9 +291,8 @@ export async function recordCheckpointAssessment(baseDirectory, input, assessmen
 
 function nextReviewDate(consecutiveSuccesses, outcome) {
   const intervals = [1, 3, 7, 14, 30];
-  const days = outcome === "accurate"
-    ? intervals[Math.min(Math.max(consecutiveSuccesses - 1, 0), intervals.length - 1)]
-    : 1;
+  const days =
+    outcome === "accurate" ? intervals[Math.min(Math.max(consecutiveSuccesses - 1, 0), intervals.length - 1)] : 1;
   const date = new Date();
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString();

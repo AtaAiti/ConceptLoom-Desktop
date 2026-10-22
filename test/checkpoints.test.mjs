@@ -5,12 +5,18 @@ import { composeCheckpoint, assessCheckpoint, resetCheckpointsForTests } from ".
 test.beforeEach(() => resetCheckpointsForTests());
 
 test("frames a checkpoint without leaking its key or rationale", () => {
-  const card = composeCheckpoint({
-    prompt: "Which shape has three sides?",
-    choices: [{ key: "triangle", label: "Triangle" }, { key: "square", label: "Square" }],
-    expected: "triangle",
-    rationale: "A triangle is defined by its three sides.",
-  }, () => 0.5);
+  const card = composeCheckpoint(
+    {
+      prompt: "Which shape has three sides?",
+      choices: [
+        { key: "triangle", label: "Triangle" },
+        { key: "square", label: "Square" },
+      ],
+      expected: "triangle",
+      rationale: "A triangle is defined by its three sides.",
+    },
+    () => 0.5,
+  );
   assert.equal(card.choices.length, 2);
   assert.equal("expected" in card, false);
   assert.equal("rationale" in card, false);
@@ -19,7 +25,11 @@ test("frames a checkpoint without leaking its key or rationale", () => {
 test("grades an exact multi-selection", () => {
   const card = composeCheckpoint({
     prompt: "Pick primes",
-    choices: [{ key: "2", label: "2" }, { key: "3", label: "3" }, { key: "4", label: "4" }],
+    choices: [
+      { key: "2", label: "2" },
+      { key: "3", label: "3" },
+      { key: "4", label: "4" },
+    ],
     expected: ["2", "3"],
     rationale: "Two and three have exactly two positive divisors.",
     multiple: true,
@@ -32,7 +42,10 @@ test("grades an exact multi-selection", () => {
 test("treats an admitted gap separately from a wrong guess", () => {
   const card = composeCheckpoint({
     prompt: "Pick one",
-    choices: [{ key: "a", label: "A" }, { key: "b", label: "B" }],
+    choices: [
+      { key: "a", label: "A" },
+      { key: "b", label: "B" },
+    ],
     expected: "a",
     rationale: "A is expected.",
   });
@@ -44,7 +57,10 @@ test("treats an admitted gap separately from a wrong guess", () => {
 test("checkpoint tokens can only be assessed once", () => {
   const card = composeCheckpoint({
     prompt: "Pick one",
-    choices: [{ key: "a", label: "A" }, { key: "b", label: "B" }],
+    choices: [
+      { key: "a", label: "A" },
+      { key: "b", label: "B" },
+    ],
     expected: "a",
     rationale: "A is expected.",
   });
@@ -77,7 +93,10 @@ test("frames and assesses an open transfer checkpoint without leaking criteria",
 test("detects confident incorrect answers and validates confidence", () => {
   const first = composeCheckpoint({
     prompt: "Pick one",
-    choices: [{ key: "a", label: "A" }, { key: "b", label: "B" }],
+    choices: [
+      { key: "a", label: "A" },
+      { key: "b", label: "B" },
+    ],
     expected: "a",
     rationale: "A is expected.",
   });
@@ -86,9 +105,13 @@ test("detects confident incorrect answers and validates confidence", () => {
 
   const second = composeCheckpoint({
     prompt: "Pick one",
-    choices: [{ key: "a", label: "A" }, { key: "b", label: "B" }],
+    choices: [
+      { key: "a", label: "A" },
+      { key: "b", label: "B" },
+    ],
     expected: "a",
     rationale: "A is expected.",
   });
   assert.throws(() => assessCheckpoint({ token: second.token, selected: "a", confidence: 101 }), /0 to 100/);
+  assert.equal(assessCheckpoint({ token: second.token, selected: "a", confidence: 90 }).accurate, true);
 });

@@ -8,18 +8,23 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const host = args[0];
 const targetFlag = args.indexOf("--target");
-const target = resolve(targetFlag >= 0 ? args[targetFlag + 1] : process.cwd());
 const skipMcp = args.includes("--skip-mcp");
 const refresh = args.includes("--refresh");
 const allowedHosts = new Set(["codex", "claude-code", "opencode", "deepseek-harness"]);
 
 if (!allowedHosts.has(host) || (targetFlag >= 0 && !args[targetFlag + 1])) {
-  process.stderr.write("Usage: node scripts/setup.mjs <codex|claude-code|opencode|deepseek-harness> [--target PATH] [--skip-mcp] [--refresh]\n");
+  process.stderr.write(
+    "Usage: node scripts/setup.mjs <codex|claude-code|opencode|deepseek-harness> [--target PATH] [--skip-mcp] [--refresh]\n",
+  );
   process.exit(2);
 }
+const target = resolve(targetFlag >= 0 ? args[targetFlag + 1] : process.cwd());
 
 async function exists(path) {
-  try { await stat(path); return true; } catch (error) {
+  try {
+    await stat(path);
+    return true;
+  } catch (error) {
     if (error?.code === "ENOENT") return false;
     throw error;
   }
@@ -36,7 +41,10 @@ async function copyNew(source, destination) {
 async function materializeTemplate(source, destination, replacements) {
   if (await exists(destination)) throw new Error(`refusing to overwrite existing file: ${destination}`);
   let text = await readFile(source, "utf8");
-  for (const [needle, value] of Object.entries(replacements)) text = text.replaceAll(needle, value);
+  const json = destination.endsWith(".json");
+  for (const [needle, value] of Object.entries(replacements))
+    text = text.replaceAll(needle, json ? JSON.stringify(value).slice(1, -1) : value);
+  if (json) JSON.parse(text);
   await mkdir(dirname(destination), { recursive: true });
   await writeFile(destination, text, "utf8");
 }
@@ -88,7 +96,7 @@ function registerCodexMcp() {
     }
     throw new Error(
       "a different Codex MCP server named 'concept-loom' already exists; " +
-      "review it with `codex mcp get concept-loom`, then remove or rename it before retrying",
+        "review it with `codex mcp get concept-loom`, then remove or rename it before retrying",
     );
   }
 
@@ -110,14 +118,18 @@ async function installCodex() {
   if (refresh) {
     process.stdout.write(`Refreshed Codex skill in ${skillDestination}\n`);
     registerCodexMcp();
-    process.stdout.write(`\nStart a new Codex session from the learning workspace:\n  cd ${JSON.stringify(target)}\n  codex\n`);
+    process.stdout.write(
+      `\nStart a new Codex session from the learning workspace:\n  cd ${JSON.stringify(target)}\n  codex\n`,
+    );
     return;
   }
   const guidance = await installGuidance(join(source, "AGENTS.md"), "AGENTS.md", "CONCEPT_LOOM_AGENTS.md");
   process.stdout.write(`Installed Codex skill in ${skillDestination}\n`);
   if (guidance !== "AGENTS.md") process.stdout.write("Merge CONCEPT_LOOM_AGENTS.md into your existing AGENTS.md.\n");
   registerCodexMcp();
-  process.stdout.write(`\nStart a new Codex session from the learning workspace:\n  cd ${JSON.stringify(target)}\n  codex\n`);
+  process.stdout.write(
+    `\nStart a new Codex session from the learning workspace:\n  cd ${JSON.stringify(target)}\n  codex\n`,
+  );
 }
 
 async function installClaude() {
@@ -167,8 +179,10 @@ async function installDeepSeekHarness() {
     if (refresh) {
       await writeFile(
         patchDestination,
-        (await readFile(join(source, "concept-loom.patch.yml.template"), "utf8"))
-          .replaceAll("__SERVER_PATH__", yamlSingleQuoted(join(projectRoot, "src", "bridge.mjs"))),
+        (await readFile(join(source, "concept-loom.patch.yml.template"), "utf8")).replaceAll(
+          "__SERVER_PATH__",
+          yamlSingleQuoted(join(projectRoot, "src", "bridge.mjs")),
+        ),
         "utf8",
       );
     } else {
@@ -192,8 +206,8 @@ async function installDeepSeekHarness() {
   }
   process.stdout.write(
     `\nStart DeepSeek Harness with Concept Loom:\n` +
-    `  cd ${JSON.stringify(target)}\n` +
-    `  npx @deepseek-ai/dsh --profile web --patch .dsh/concept-loom.patch.yml\n`,
+      `  cd ${JSON.stringify(target)}\n` +
+      `  npx @deepseek-ai/dsh --profile web --patch .dsh/concept-loom.patch.yml\n`,
   );
 }
 
