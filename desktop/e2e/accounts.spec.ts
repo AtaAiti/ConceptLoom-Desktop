@@ -25,7 +25,9 @@ test('provider selection, explicit context consent and remembered local model su
     }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Save settings' }).click();
-  await expect(page.getByRole('alert')).toContainText('Разрешите передачу');
+  await expect(
+    page.getByText('Настройки сохранены. Передача учебного контекста отключена.'),
+  ).toBeVisible();
   await page.getByRole('checkbox', { name: /Разрешаю отправлять/ }).check();
   await page.getByRole('button', { name: 'Save settings' }).click();
   await expect(page.getByText('Настройки сохранены.', { exact: true })).toBeVisible();
@@ -34,6 +36,14 @@ test('provider selection, explicit context consent and remembered local model su
   await page.reload();
   await page.getByRole('button', { name: 'Настройки', exact: true }).click();
   await expect(page.getByLabel('AI provider')).toHaveValue('codex');
+  await page.getByRole('checkbox', { name: /Разрешаю отправлять/ }).uncheck();
+  await page.getByRole('button', { name: 'Save settings' }).click();
+  await expect(
+    page.getByText('Настройки сохранены. Передача учебного контекста отключена.'),
+  ).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: 'Настройки', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: /Разрешаю отправлять/ })).not.toBeChecked();
   await page.getByLabel('AI provider').selectOption('ollama');
   await expect(page.getByLabel('AI model')).toHaveValue('qwen3:8b');
   await page.getByRole('button', { name: 'Save settings' }).click();

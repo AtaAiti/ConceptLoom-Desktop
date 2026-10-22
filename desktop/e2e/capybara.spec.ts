@@ -130,4 +130,19 @@ test('CAPYBARA layouts, theme persistence, source preview and review focus', asy
       }).length,
   );
   expect(broken).toBe(0);
+  await page.setViewportSize({ width: 1000, height: 700 });
+  for (const label of [
+    'Сегодня',
+    'Источники',
+    'Дорожная карта',
+    'Карта знаний',
+    'Репетитор',
+    'Учебный центр',
+  ]) {
+    await page.getByRole('navigation').getByRole('button', { name: label, exact: true }).click();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+  }
+  await page.screenshot({ animations: 'disabled', path: 'test-results/capybara-1000.png' });
 });

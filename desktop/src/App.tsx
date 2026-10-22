@@ -67,7 +67,11 @@ export default function App() {
     (course ? frontier(state, course.id)[0] : undefined);
   const run = (task: () => Promise<void>) => {
     setNotice('');
-    void task().catch((e) => setNotice(errorMessage(e)));
+    void task().catch((e) => {
+      const message = errorMessage(e);
+      setNotice(message);
+      window.dispatchEvent(new CustomEvent('conceptloom:error', { detail: message }));
+    });
   };
   const learn = (topic: Topic) => {
     setCourseId(topic.courseId);
@@ -148,6 +152,7 @@ export default function App() {
   if (error)
     return (
       <main className="fatal">
+        <WindowBar onError={run} />
         <h1>Your saved data needs attention.</h1>
         <p>{error}</p>
         <button className="primary" onClick={() => window.location.reload()}>
@@ -158,11 +163,18 @@ export default function App() {
   if (!ready)
     return (
       <main className="fatal">
+        <WindowBar onError={run} />
         <GitBranch size={40} />
         <h1>Opening your learning space…</h1>
       </main>
     );
-  if (!state.settings.onboardingComplete) return <Onboarding state={state} commit={commit} />;
+  if (!state.settings.onboardingComplete)
+    return (
+      <>
+        <WindowBar onError={run} />
+        <Onboarding state={state} commit={commit} />
+      </>
+    );
   return (
     <div
       className={`app-shell capybara ${page === 'Reviews' ? 'focus-mode' : ''}`}
@@ -386,6 +398,7 @@ export default function App() {
           )}
           {page === 'Learn' && (
             <LessonScreen
+              key={topic?.id ?? course?.id ?? 'empty'}
               state={state}
               course={course}
               topic={topic}

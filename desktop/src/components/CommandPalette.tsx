@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Dialog } from './Dialog';
 import type { Workspace } from '../types/state';
 
 export interface SearchAction {
@@ -65,12 +66,10 @@ export function CommandPalette({
     .filter((a) => a.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
     .slice(0, 40);
   return (
-    <div className="modal-backdrop">
+    <Dialog label="Search and commands" onClose={close}>
       <section
         ref={root}
         className="modal command-palette"
-        role="dialog"
-        aria-modal="true"
         aria-label="Search and commands"
         onKeyDown={(e) => {
           if (e.key === 'Escape') {
@@ -130,6 +129,6 @@ export function CommandPalette({
           Закрыть поиск
         </button>
       </section>
-    </div>
+    </Dialog>
   );
 }

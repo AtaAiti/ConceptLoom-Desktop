@@ -3,7 +3,7 @@ import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { PageHeading, Panel, Empty, Progress } from '../../components/ui';
 import { gradeExact, publicExercise, topicStatus, prepareLesson } from '../../learning/conceptloom';
 import { masteryLabel, topicMastery } from '../../learning/mastery';
-import { lessonContentSchema, verdictSchema } from '../../ai/schemas';
+import { generatedLessonSchema, verdictSchema } from '../../ai/schemas';
 import { systemPrompt } from '../../ai/prompts/system';
 import { lessonPrompt } from '../../ai/prompts/lesson';
 import { generateGrounded } from '../../ai/sourceLearning';
@@ -62,6 +62,7 @@ export function LessonScreen({
       />
     );
   const lesson = state.lessons.find((l) => l.topicId === topic.id);
+  const needsRepair = lesson && !generatedLessonSchema.safeParse(lesson.content).success;
   const located = state.attempts.some((a) => a.topicId === topic.id);
   const score = topicMastery(state, topic.id);
   const next = state.topics.find(
@@ -88,7 +89,7 @@ export function LessonScreen({
             courseId: course.id,
             topicId: topic.id,
             phase: 'build',
-            nextStep: `Assess ${question.id}: ${answer}`,
+            nextStep: `Assess ${question.id}`,
             exerciseId: question.id,
             pendingResponse: answer,
             updatedAt: new Date().toISOString(),
@@ -166,11 +167,15 @@ export function LessonScreen({
       />
       {!lesson && <SourceContext state={state} course={course} commit={commit} run={run} />}
       {lesson && <Citations citations={lesson.citations} />}
-      {!lesson ? (
+      {(!lesson || needsRepair) && (
         <Panel>
           <Empty
-            title="Разберём это понятие"
-            description="Выбранная модель ИИ подготовит объяснение и задания. Прогресс меняют ваши ответы."
+            title={needsRepair ? 'В занятии не хватает видов практики' : 'Разберём это понятие'}
+            description={
+              needsRepair
+                ? 'Обновите задания, чтобы проверить все четыре вида понимания. Накопленные результаты и карточки сохранятся.'
+                : 'Выбранная модель ИИ подготовит объяснение и задания. Прогресс меняют ваши ответы.'
+            }
           >
             <button
               className="primary"
@@ -185,16 +190,22 @@ export function LessonScreen({
                       course,
                       `${topic.title} ${topic.description}`,
                       lessonPrompt(topic, state),
-                      lessonContentSchema,
+                      generatedLessonSchema,
                     );
                     const content = prepareLesson(generated);
+                    if (lesson)
+                      content.exercises = content.exercises.map((e) => ({
+                        ...e,
+                        id: crypto.randomUUID(),
+                      }));
                     const now = new Date().toISOString();
                     await commit((s) => {
-                      if (s.lessons.some((l) => l.topicId === topic.id)) return s;
+                      const existing = s.lessons.find((l) => l.topicId === topic.id);
+                      if (existing && (!needsRepair || existing.id !== lesson?.id)) return s;
                       return {
                         ...s,
                         lessons: [
-                          ...s.lessons,
+                          ...s.lessons.filter((l) => l.topicId !== topic.id),
                           {
                             id: crypto.randomUUID(),
                             courseId: course.id,
@@ -206,15 +217,17 @@ export function LessonScreen({
                         ],
                         cards: [
                           ...s.cards,
-                          ...content.flashcards.map((c) => ({
-                            ...newCard(course.id, topic.id, c.front, c.back),
-                            citations,
-                            createdBy: 'ai' as const,
-                            blocks: [
-                              { type: 'text' as const, text: c.back },
-                              { type: 'example' as const, text: content.examples[0] },
-                            ],
-                          })),
+                          ...(lesson
+                            ? []
+                            : content.flashcards.map((c) => ({
+                                ...newCard(course.id, topic.id, c.front, c.back),
+                                citations,
+                                createdBy: 'ai' as const,
+                                blocks: [
+                                  { type: 'text' as const, text: c.back },
+                                  { type: 'example' as const, text: content.examples[0] },
+                                ],
+                              }))),
                         ],
                         sessions: [
                           ...s.sessions.filter((v) => v.id !== topic.id),
@@ -229,6 +242,9 @@ export function LessonScreen({
                         ],
                       };
                     });
+                    setIndex(0);
+                    setResponse('');
+                    setFeedback(null);
                     started.current = Date.now();
                   } finally {
                     setWorking(false);
@@ -237,11 +253,16 @@ export function LessonScreen({
               }
             >
               <Sparkles size={16} />
-              {working ? 'Готовим занятие…' : 'Подготовить занятие'}
+              {working
+                ? 'Готовим занятие…'
+                : needsRepair
+                  ? 'Обновить задания'
+                  : 'Подготовить занятие'}
             </button>
           </Empty>
         </Panel>
-      ) : (
+      )}
+      {lesson && (
         <div className="lesson-layout">
           <div>
             {!located && (
@@ -327,6 +348,7 @@ export function LessonScreen({
                               : 'Объясните своими словами…'
                           }
                           value={response}
+                          maxLength={20000}
                           disabled={working || !!feedback}
                           onChange={(e) => setResponse(e.target.value)}
                         />

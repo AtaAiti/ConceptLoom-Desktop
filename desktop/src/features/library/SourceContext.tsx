@@ -1,3 +1,4 @@
+import { Dialog } from '../../components/Dialog';
 import { useState } from 'react';
 import type { Course, Workspace } from '../../types/state';
 import type { SourceCitation, SourceScope } from '../../types/sources';
@@ -105,19 +106,14 @@ export function Citations({ citations = [] }: { citations?: SourceCitation[] }) 
     <div className="citations">
       <span className="eyebrow">ИСТОЧНИК</span>
       {citations.map((c) => (
-        <button key={c.chunkId} className="text-button" onClick={() => setOpened(c)}>
+        <button type="button" key={c.chunkId} className="text-button" onClick={() => setOpened(c)}>
           {c.title}
           {c.page ? ` · с. ${c.page}` : ' · фрагмент'}
         </button>
       ))}
       {opened && (
-        <div
-          className="modal-backdrop"
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setOpened(null);
-          }}
-        >
-          <section className="modal" role="dialog" aria-modal="true" aria-label="Source excerpt">
+        <Dialog label="Source excerpt" onClose={() => setOpened(null)}>
+          <section className="modal">
             <h2>
               {opened.title}
               {opened.page ? ` · Страница ${opened.page}` : ''}
@@ -127,11 +123,11 @@ export function Citations({ citations = [] }: { citations?: SourceCitation[] }) 
               Passage supplied to the selected AI model. Check its interpretation against this
               evidence.
             </p>
-            <button autoFocus className="secondary" onClick={() => setOpened(null)}>
+            <button type="button" autoFocus className="secondary" onClick={() => setOpened(null)}>
               Закрыть фрагмент
             </button>
           </section>
-        </div>
+        </Dialog>
       )}
     </div>
   );

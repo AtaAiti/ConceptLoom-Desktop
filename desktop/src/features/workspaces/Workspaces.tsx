@@ -1,3 +1,4 @@
+import { Dialog } from '../../components/Dialog';
 import { useState } from 'react';
 import { Field, PageHeading, Panel } from '../../components/ui';
 import { removeWorkspace } from '../../db/workspaces';
@@ -130,10 +131,9 @@ export function Workspaces({
           })}
       </div>
       {edit && (
-        <div className="modal-backdrop">
+        <Dialog label="Детали пространства" onClose={() => setEdit(null)}>
           <form
             className="modal"
-            role="dialog"
             aria-label="Детали пространства"
             onSubmit={(e) => {
               e.preventDefault();
@@ -201,11 +201,11 @@ export function Workspaces({
               </button>
             </div>
           </form>
-        </div>
+        </Dialog>
       )}
       {deleting && (
-        <div className="modal-backdrop">
-          <section className="modal" role="dialog" aria-label="Удалить пространство">
+        <Dialog label="Удалить пространство" onClose={() => setDeleting(null)}>
+          <section className="modal" aria-label="Удалить пространство">
             <h2>Удалить {deleting.name}?</h2>
             <p>
               Все источники, направления, карточки и история обучения этого пространства будут
@@ -232,7 +232,7 @@ export function Workspaces({
               </button>
             </div>
           </section>
-        </div>
+        </Dialog>
       )}
     </>
   );

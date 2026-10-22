@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Cpu, ShieldCheck } from 'lucide-react';
 import { errorMessage, Field, PageHeading, Panel } from '../../components/ui';
 import { repository } from '../../db/repository';
+import { mergeSettings } from '../../db/settings';
 import { OllamaProvider, localEndpoint } from '../../ai/providers/ollama';
 import {
   accountStatus,
@@ -26,6 +27,7 @@ export function Settings({
   run: (task: () => Promise<void>) => void;
 }) {
   const [settings, setSettings] = useState({ ...state.settings });
+  const [baseline, setBaseline] = useState(state.settings);
   const [models, setModels] = useState<string[]>([]);
   const [status, setStatus] = useState('');
   const [working, setWorking] = useState(false);
@@ -80,20 +82,26 @@ export function Settings({
           e.preventDefault();
           run(async () => {
             localEndpoint(settings.endpoint);
-            if (cloud && !settings.accountDataConsent)
-              throw new Error('Разрешите передачу учебного контекста выбранному сервису.');
             if (
               cloud &&
               (!/^[a-zA-Z0-9._:/-]{1,200}$/.test(settings.model) || settings.model.startsWith('-'))
             )
               throw new Error('Укажите корректное имя модели или default.');
-            const saved = {
+            let saved = {
               ...settings,
               providerModels: { ...settings.providerModels, [settings.provider]: settings.model },
             };
-            await commit((s) => ({ ...s, settings: saved }));
+            await commit((s) => {
+              saved = mergeSettings(s.settings, baseline, saved);
+              return { ...s, settings: saved };
+            });
             setSettings(saved);
-            setStatus('Настройки сохранены.');
+            setBaseline(saved);
+            setStatus(
+              cloud && !saved.accountDataConsent
+                ? 'Настройки сохранены. Передача учебного контекста отключена.'
+                : 'Настройки сохранены.',
+            );
           });
         }}
       >

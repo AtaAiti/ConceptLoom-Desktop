@@ -142,6 +142,7 @@ export function Tutor({
               aria-label="Ask your tutor"
               placeholder="Объясните следующий шаг своими словами…"
               value={question}
+              maxLength={20000}
               onChange={(e) => setQuestion(e.target.value)}
               disabled={working}
             />

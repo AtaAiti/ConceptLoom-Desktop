@@ -5,6 +5,13 @@ learning workflow. Free, MIT licensed and local-first. Use Ollama offline, or co
 ChatGPT, Claude or Gemini through an existing account in an official CLI client.
 Account access, available models and usage limits depend on the selected service.
 
+## New in 0.3.1
+
+Audit fixes cover revocable account consent, settings merges, delayed lesson
+responses, incomplete legacy lesson repair, graph performance, keyboard dialogs,
+light-theme feedback and Windows MCP setup/state safety. No new dependency was
+added. See the [audit report and remaining limits](../docs/production-audit.md).
+
 ## New in 0.3.0
 
 Settings now offers Ollama, ChatGPT via Codex, Claude via Claude Code, and Gemini
@@ -56,7 +63,8 @@ See [iteration scope, architecture and remaining work](../docs/workspaces-source
 - Local PDF/TXT/Markdown library, pasted text without a required title, and model discovery/selection in Settings.
 - Native SQLite migrations and transactional save-before-continue persistence.
 
-This is an initial implementation, not an audited stable release. AI-generated
+This implementation has received a source audit and regression fixes; remaining
+limits and unverified integrations are documented in the audit report. AI-generated
 subject matter still needs human judgment. Responses are schema-validated; this
 does not establish factual correctness. No PDF OCR, voice exercises, LM Studio
 adapter, export/import of legacy MCP notebooks, or automatic model downloads in

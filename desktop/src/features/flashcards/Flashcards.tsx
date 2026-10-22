@@ -1,3 +1,4 @@
+import { Dialog } from '../../components/Dialog';
 import { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Empty, Field, PageHeading, Panel } from '../../components/ui';
@@ -74,7 +75,7 @@ export function Flashcards({
         />
       )}
       {edit && (
-        <div className="modal-backdrop">
+        <Dialog label="Карточка" onClose={() => setEdit(null)}>
           <form
             className="modal"
             onSubmit={(e) => {
@@ -112,10 +113,10 @@ export function Flashcards({
               </button>
             </div>
           </form>
-        </div>
+        </Dialog>
       )}
       {removing && (
-        <div className="modal-backdrop">
+        <Dialog label="Удалить карточку" onClose={() => setRemoving(null)}>
           <Panel title="Удалить эту карточку?">
             <p>This also removes its review history. This cannot be undone.</p>
             <div className="button-row">
@@ -139,7 +140,7 @@ export function Flashcards({
               </button>
             </div>
           </Panel>
-        </div>
+        </Dialog>
       )}
     </>
   );

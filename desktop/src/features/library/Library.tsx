@@ -1,3 +1,4 @@
+import { Dialog } from '../../components/Dialog';
 import { SourceDialogs } from './SourceDialogs';
 import { DesignIcon } from '../../components/DesignIcon';
 import { useState } from 'react';
@@ -378,8 +379,8 @@ export function Library({
         </Panel>
       </div>
       {pasteOpen && (
-        <div className="modal-backdrop">
-          <section className="modal" role="dialog" aria-modal="true" aria-label="Вставить текст">
+        <Dialog label="Вставить текст" onClose={() => setPasteOpen(false)}>
+          <section className="modal" aria-label="Вставить текст">
             <h2>Текст или заметка</h2>
             <p className="muted small">
               До 1 000 000 символов. Сохраняется в выбранной библиотеке.
@@ -425,7 +426,7 @@ export function Library({
               </div>
             </form>
           </section>
-        </div>
+        </Dialog>
       )}
       <SourceDialogs
         state={state}

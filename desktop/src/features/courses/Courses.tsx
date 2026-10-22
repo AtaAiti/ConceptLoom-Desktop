@@ -1,3 +1,4 @@
+import { Dialog } from '../../components/Dialog';
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, ArrowRight } from 'lucide-react';
 import { PageHeading, Panel, Progress } from '../../components/ui';
@@ -96,7 +97,7 @@ export function Courses({
         </Panel>
       )}
       {editing && (
-        <div className="modal-backdrop">
+        <Dialog label="Учебное направление" onClose={() => setEditing(null)}>
           <section className="modal wide">
             <div className="panel-heading">
               <h2>{editing === 'new' ? 'Создать учебное направление' : 'Изменить направление'}</h2>
@@ -113,10 +114,10 @@ export function Courses({
               onDone={() => setEditing(null)}
             />
           </section>
-        </div>
+        </Dialog>
       )}
       {deleting && (
-        <div className="modal-backdrop">
+        <Dialog label="Удалить направление" onClose={() => setDeleting(null)}>
           <Panel title={`Удалить ${deleting.name}?`}>
             <p>This permanently removes its lessons, cards, notes, and progress.</p>
             <div className="button-row">
@@ -136,7 +137,7 @@ export function Courses({
               </button>
             </div>
           </Panel>
-        </div>
+        </Dialog>
       )}
     </>
   );

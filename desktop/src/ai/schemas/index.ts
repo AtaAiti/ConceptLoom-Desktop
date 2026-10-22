@@ -2,6 +2,13 @@ import { z } from 'zod';
 import { lessonContentSchema } from '../../types/state';
 
 export { lessonContentSchema };
+// Keep persisted legacy lessons readable; new lessons must cover every dimension.
+export const generatedLessonSchema = lessonContentSchema.superRefine((lesson, ctx) => {
+  for (const dimension of ['recognition', 'recall', 'application', 'transfer']) {
+    if (!lesson.exercises.some((exercise) => exercise.dimension === dimension))
+      ctx.addIssue({ code: 'custom', message: `Missing ${dimension} exercise.` });
+  }
+});
 export const mapSchema = z.object({
   topics: z
     .array(
@@ -27,8 +34,6 @@ export function parseResponse<T>(raw: string, schema: z.ZodType<T>): T {
     return schema.parse(JSON.parse(raw));
   } catch (error) {
     console.error('Invalid structured AI response', error);
-    throw new Error(
-      'Модель вернула неверный ответ. Попробуйте снова или выберите другую модель.',
-    );
+    throw new Error('Модель вернула неверный ответ. Попробуйте снова или выберите другую модель.');
   }
 }

@@ -1,3 +1,4 @@
+import { Dialog } from '../../components/Dialog';
 import { useState } from 'react';
 import {
   Background,
@@ -10,7 +11,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import { Plus, Sparkles } from 'lucide-react';
 import { Empty, Field, Panel, PageHeading } from '../../components/ui';
-import { topicStatus, validateMap } from '../../learning/conceptloom';
+import { topicStatus, validateMap, topicDepths } from '../../learning/conceptloom';
 import { topicMastery } from '../../learning/mastery';
 import { mapSchema } from '../../ai/schemas';
 import { generateGrounded } from '../../ai/sourceLearning';
@@ -51,14 +52,10 @@ export function KnowledgeMap({
     topics.find((t) => t.id === selectedId) ??
     topics.find((t) => topicStatus(state, t) !== 'locked') ??
     topics[0];
-  function depth(topic: Topic): number {
-    return topic.dependsOn.length
-      ? 1 + Math.max(...topic.dependsOn.map((id) => depth(topics.find((t) => t.id === id)!)))
-      : 0;
-  }
+  const depths = topicDepths(topics);
   const rows = new Map<number, number>();
   const nodes = topics.map((topic) => {
-    const level = depth(topic);
+    const level = depths.get(topic.id)!;
     const column = rows.get(level) ?? 0;
     rows.set(level, column + 1);
     const status = topicStatus(state, topic);
@@ -302,7 +299,7 @@ export function KnowledgeMap({
         />
       )}
       {edit && (
-        <div className="modal-backdrop">
+        <Dialog label="Понятие" onClose={() => setEdit(null)}>
           <section className="modal">
             <h2>
               {topics.some((t) => t.id === edit.id) ? 'Ваша следующая связь' : 'Добавить понятие'}
@@ -380,7 +377,7 @@ export function KnowledgeMap({
               </button>
             </div>
           </section>
-        </div>
+        </Dialog>
       )}
       <p className="muted small">
         Select a node to edit or open its lesson. Drag between handles to add a dependency. Your

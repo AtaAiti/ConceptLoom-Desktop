@@ -1,3 +1,4 @@
+import { Dialog } from '../../components/Dialog';
 import { Field } from '../../components/ui';
 import type { Workspace } from '../../types/state';
 import type { Source } from '../../types/sources';
@@ -33,10 +34,9 @@ export function SourceDialogs({
   return (
     <>
       {edit && (
-        <div className="modal-backdrop">
+        <Dialog label="Изменить источник" onClose={() => setEdit(null)}>
           <form
             className="modal"
-            role="dialog"
             aria-label="Изменить источник"
             onSubmit={(e) => {
               e.preventDefault();
@@ -110,11 +110,11 @@ export function SourceDialogs({
               </button>
             </div>
           </form>
-        </div>
+        </Dialog>
       )}
       {preview && (
-        <div className="modal-backdrop">
-          <section className="modal wide" role="dialog" aria-label="Предпросмотр источника">
+        <Dialog label="Предпросмотр источника" onClose={() => setPreview(null)}>
+          <section className="modal wide" aria-label="Предпросмотр источника">
             <h2>{preview.title}</h2>
             <div className="button-row">
               <button className="secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>
@@ -136,11 +136,11 @@ export function SourceDialogs({
             </div>
             <p className="prose source-page">{preview.pages[page].text}</p>
           </section>
-        </div>
+        </Dialog>
       )}
       {removing && (
-        <div className="modal-backdrop">
-          <section className="modal" role="dialog" aria-label="Remove source">
+        <Dialog label="Remove source" onClose={() => setRemoving(null)}>
+          <section className="modal" aria-label="Remove source">
             <h2>Удалить {removing.title}?</h2>
             <p>
               Источник и его поисковый индекс будут удалены. Цитаты в готовых занятиях сохранятся.
@@ -167,7 +167,7 @@ export function SourceDialogs({
               </button>
             </div>
           </section>
-        </div>
+        </Dialog>
       )}
     </>
   );

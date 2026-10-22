@@ -181,11 +181,15 @@ async fn stop_tree(pid: Option<u32>) {
     }
     let _ = pid;
 }
-async fn capture(
+async fn capture(command: Command, input: Vec<u8>, seconds: u64) -> Result<(bool, String), String> {
+    let (ok, output, _) = capture_streams(command, input, seconds).await?;
+    Ok((ok, output))
+}
+async fn capture_streams(
     mut command: Command,
     input: Vec<u8>,
     seconds: u64,
-) -> Result<(bool, String), String> {
+) -> Result<(bool, String, String), String> {
     hidden(&mut command);
     command
         .stdin(Stdio::piped())
@@ -208,9 +212,13 @@ async fn capture(
             Ok::<_, String>(())
         };
         let wait = async { child.wait().await.map_err(|_| FAILURE.to_string()) };
-        let (_, out, _err, status) =
+        let (_, out, err, status) =
             tokio::try_join!(write, read_limited(stdout), read_limited(stderr), wait)?;
-        Ok::<_, String>((status.success(), String::from_utf8_lossy(&out).into_owned()))
+        Ok::<_, String>((
+            status.success(),
+            String::from_utf8_lossy(&out).into_owned(),
+            String::from_utf8_lossy(&err).into_owned(),
+        ))
     };
     match tokio::time::timeout(Duration::from_secs(seconds), operation).await {
         Ok(Ok(result)) => Ok(result),
@@ -295,12 +303,8 @@ pub async fn status(root: &Path, provider: Provider) -> Result<AccountStatus, St
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped());
             hidden(&mut command);
-            match tokio::time::timeout(Duration::from_secs(15), command.output()).await {
-                Ok(Ok(out))
-                    if out.status.success()
-                        && (String::from_utf8_lossy(&out.stderr).contains("ChatGPT")
-                            || String::from_utf8_lossy(&out.stdout).contains("ChatGPT")) =>
-                {
+            match capture_streams(command, vec![], 15).await {
+                Ok((true, out, err)) if err.contains("ChatGPT") || out.contains("ChatGPT") => {
                     "account"
                 }
                 _ => "missing",
@@ -570,15 +574,11 @@ fn prepare(
             let central = std::env::var_os("ProgramData")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| PathBuf::from("C:/ProgramData"))
-                .join("gemini-cli/policies");
-            if central.is_dir()
-                && std::fs::read_dir(central).map_err(|_| FAILURE)?.any(|e| {
-                    e.ok()
-                        .is_some_and(|e| e.path().extension().is_some_and(|x| x == "toml"))
-                })
-            {
-                return Err("На компьютере действует централизованная политика Gemini CLI. Подключение через приложение требует проверки администратором.".into());
-            }
+                .join("gemini-cli");
+            check_gemini_admin(
+                &central,
+                std::env::var_os("GEMINI_CLI_SYSTEM_SETTINGS_PATH").as_deref(),
+            )?;
             let policy = cwd.join("no-tools.toml");
             std::fs::write(
                 &policy,
@@ -604,6 +604,31 @@ fn prepare(
         }
     }
     Ok((command, final_file))
+}
+fn check_gemini_admin(central: &Path, custom: Option<&std::ffi::OsStr>) -> Result<(), String> {
+    // Never replace an organization's system settings, even if no policy file exists.
+    let policy = central.join("policies");
+    let configured = custom.is_some()
+        || central
+            .join("settings.json")
+            .try_exists()
+            .map_err(|_| FAILURE)?
+        || if policy.try_exists().map_err(|_| FAILURE)? {
+            let mut found = false;
+            for entry in std::fs::read_dir(policy).map_err(|_| FAILURE)? {
+                let path = entry.map_err(|_| FAILURE)?.path();
+                found |= path
+                    .extension()
+                    .is_some_and(|ext| ext.to_string_lossy().eq_ignore_ascii_case("toml"));
+            }
+            found
+        } else {
+            false
+        };
+    if configured {
+        return Err("На компьютере действуют централизованные настройки Gemini CLI. Подключение через приложение требует проверки администратором.".into());
+    }
+    Ok(())
 }
 pub async fn generate(
     root: &Path,
@@ -665,6 +690,16 @@ pub async fn test(root: &Path, provider: Provider, model: &str) -> Result<String
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn central_gemini_settings_are_never_overridden() {
+        let root = tempfile::tempdir().unwrap();
+        assert!(check_gemini_admin(root.path(), None).is_ok());
+        assert!(
+            check_gemini_admin(root.path(), Some(std::ffi::OsStr::new("custom.json"))).is_err()
+        );
+        std::fs::write(root.path().join("settings.json"), "{}").unwrap();
+        assert!(check_gemini_admin(root.path(), None).is_err());
+    }
     #[test]
     fn launch_contracts_keep_context_on_stdin_and_disable_tools() {
         let dir = tempfile::tempdir().unwrap();

@@ -180,6 +180,7 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
             >
               Start with an empty workspace
             </button>
+            {status && <p role="status">{status}</p>}
           </>
         )}
         {step === 4 && (

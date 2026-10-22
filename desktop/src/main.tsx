@@ -2,6 +2,7 @@ import '@fontsource-variable/inter';
 import { Component, StrictMode, type ErrorInfo, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { WindowBar } from './components/WindowBar';
 import './styles.css';
 import './styles/workspaces.css';
 import './styles/capybara.css';
@@ -16,13 +17,20 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean
   }
   render() {
     return this.state.failed ? (
-      <main className="fatal">
-        <h1>We couldn’t open this view.</h1>
-        <p>Restart the app to reload your last saved progress.</p>
-        <button className="primary" onClick={() => window.location.reload()}>
-          Reload
-        </button>
-      </main>
+      <>
+        <WindowBar
+          onError={(task) => {
+            void task().catch(console.error);
+          }}
+        />
+        <main className="fatal">
+          <h1>We couldn’t open this view.</h1>
+          <p>Restart the app to reload your last saved progress.</p>
+          <button className="primary" onClick={() => window.location.reload()}>
+            Reload
+          </button>
+        </main>
+      </>
     ) : (
       this.props.children
     );

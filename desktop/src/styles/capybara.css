@@ -5,7 +5,7 @@
   --raised: #282932;
   --border: #34353f;
   --muted: #acabb9;
-  --subtle: #7e7f90;
+  --subtle: #a5a4b5;
   --accent: #b9a5f5;
   --text: #f0eff5;
   --sidebar: #1c1d23;
@@ -23,7 +23,7 @@
   --raised: #f2f0f7;
   --border: #dcd9e5;
   --muted: #696476;
-  --subtle: #847f90;
+  --subtle: #706a7d;
   --accent: #7551bd;
   --text: #2c2935;
   --sidebar: #eeedf4;
@@ -1136,4 +1136,47 @@
   width: 18px;
   min-width: 18px;
   margin-top: 5px;
+}
+
+dialog.modal-backdrop {
+  flex-direction: column;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  color: var(--text);
+}
+.dialog-error {
+  max-width: 680px;
+  flex-shrink: 0;
+}
+dialog.modal-backdrop::backdrop {
+  background: transparent;
+}
+dialog.modal-backdrop:not([open]) {
+  display: none;
+}
+:root[data-theme='light'] .feedback.accurate {
+  background: #e5f1eb;
+  color: #234f3d;
+}
+:root[data-theme='light'] .feedback.repair {
+  background: #fbefd9;
+  color: #624517;
+}
+.upload-button {
+  position: relative;
+}
+.upload-button input {
+  display: block;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.upload-button:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
