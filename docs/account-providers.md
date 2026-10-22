@@ -1,4 +1,4 @@
-# Account AI providers — Desktop 0.3.0
+# Account AI providers — Desktop 0.3.1
 
 ## Connect an account
 
@@ -22,6 +22,11 @@ Switching providers remembers model names and preserves the Ollama loopback URL.
 Context consent must be given again when switching to another provider. There is
 no silent fallback to a different provider, API billing or local model. Saved
 learning progress remains in the same SQLite database.
+
+You can uncheck context consent and save while keeping the selected provider.
+Subsequent learning requests are blocked until consent is given again; an already
+running request is not cancelled. The fixed generic connection test contains no
+learning context and remains available.
 
 An ordinary web chat subscription is not a universal authorization mechanism.
 The official client must accept that particular account and model. Gemini offers
@@ -54,7 +59,8 @@ implement a third-party OAuth application or extract browser/CLI tokens.
   strict MCP config, disabled hooks/auto memory, and no session persistence.
 - Gemini uses enforced Google OAuth, system settings disabling extensions, MCP,
   hooks, skills and agents, a replaced system prompt and an admin deny-all tool
-  policy. If central admin policy files would suppress the supplied policy, the
+  policy. If central settings, a custom system-settings path or admin policy files
+  would suppress the supplied settings/policy, the
   bridge refuses to run. Its CLI `@file`/`!command` preprocessing is neutralized by
   Unicode escapes inside the JSON prompt; decoded learning text is unchanged.
 - Provider JSON envelopes and JSON syntax are checked natively. Task-specific Zod
@@ -109,7 +115,11 @@ The upstream [ConceptLoom](https://github.com/Zproger/ConceptLoom) runs its coac
 workflow within coding clients. This desktop bridge follows that account-client
 approach while retaining a native desktop learning interface.
 
-## Validation on Windows
+## Validation of 0.3.0 on Windows (historical)
+
+Current audit results are in [production audit](production-audit.md). The real
+account smoke below belongs to the earlier milestone; this audit does not repeat
+paid inference or sign into Claude/Gemini accounts.
 
 - 27 TypeScript unit tests passed; the two pre-existing opt-in Ollama integration
   checks remain skipped by the ordinary Vitest run (`OLLAMA_INTEGRATION` is unset).

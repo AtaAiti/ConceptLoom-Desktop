@@ -1,5 +1,7 @@
 # ConceptLoom Desktop implementation plan
 
+Historical initial plan. Current fixes and remaining limits: [production audit](production-audit.md).
+
 ## Repository inspection
 
 Inspected upstream commit `6cc52df`, all source modules, installer, adapters,

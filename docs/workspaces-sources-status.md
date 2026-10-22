@@ -1,5 +1,7 @@
 # ConceptLoom Desktop 0.2.0 — delivered scope
 
+Historical 0.2.0 milestone. Current fixes and remaining limits: [production audit](production-audit.md).
+
 This iteration implements the workspace/source foundation and the first learning slice. The complete 62-section product specification remains a multi-release roadmap; sections below distinguish delivered behavior from follow-up work.
 
 ## Workspace and storage
