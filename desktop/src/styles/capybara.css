@@ -1301,3 +1301,62 @@ dialog.modal-backdrop:not([open]) {
 .pinned-context {
   overflow-wrap: anywhere;
 }
+.modal.source-practice {
+  width: min(900px, calc(100vw - 60px));
+  overflow-wrap: anywhere;
+}
+.source-practice > .section-line {
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-start;
+}
+.practice-destination,
+.practice-review {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  margin: 16px 0;
+}
+.practice-review {
+  grid-template-columns: 230px minmax(0, 1fr);
+}
+.practice-quote {
+  max-height: 240px;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding: 12px;
+  margin: 12px 0;
+  background: var(--raised);
+  border-left: 2px solid var(--accent);
+  line-height: 1.7;
+}
+.practice-draft {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.practice-draft legend {
+  padding: 0 6px;
+}
+.practice-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.practice-choice input {
+  width: 16px;
+  min-width: 16px;
+  height: 16px;
+}
+.practice-draft textarea {
+  min-height: 80px;
+}
+@media (max-width: 1050px) {
+  .practice-review {
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 14px;
+  }
+}

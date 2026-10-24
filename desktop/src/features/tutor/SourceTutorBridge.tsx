@@ -2,10 +2,10 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 import { Dialog } from '../../components/Dialog';
 import { Field } from '../../components/ui';
 import type { Workspace } from '../../types/state';
-import type { PinnedSource, SourceCitation } from '../../types/sources';
-import { pageChunks, resolveCitations, resolvePinnedSource } from '../library/sourceIndex';
+import type { PinnedSource } from '../../types/sources';
+import { sourceSelectionOptions, type SourceSelection } from '../library/sourceSelection';
 
-type Selection = { sourceId: string; pageIndex: number } | { citation: SourceCitation };
+type Selection = SourceSelection;
 const SourceTutorContext = createContext<((selection: Selection) => void) | null>(null);
 
 export function SourceTutorButton(
@@ -44,21 +44,7 @@ export function SourceTutorBridge({
   const [chosen, setChosen] = useState('');
   const [destination, setDestination] = useState('');
   function options(value: Selection): PinnedSource[] {
-    if ('citation' in value) {
-      const pinned = { ...value.citation, workspaceId: state.activeWorkspaceId };
-      resolvePinnedSource(state, pinned);
-      return [pinned];
-    }
-    const source = state.sources.find(
-      (s) => s.id === value.sourceId && s.workspaceId === state.activeWorkspaceId,
-    );
-    if (!source) throw new Error('Источник больше не доступен. Выберите другой материал.');
-    const chunks = pageChunks(source, value.pageIndex);
-    return resolveCitations(
-      chunks.map((c) => c.id),
-      chunks,
-      [source],
-    ).map((c) => ({ ...c, workspaceId: state.activeWorkspaceId }));
+    return sourceSelectionOptions(state, value);
   }
   let excerpts: PinnedSource[] = [],
     error = '';

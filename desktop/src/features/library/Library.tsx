@@ -9,6 +9,7 @@ import type { Source, SourcePage } from '../../types/sources';
 import { materialText, materialTitle, readMaterialPages, MAX_TEXT_CHARACTERS } from './materials';
 import { sourceIndex, type SourceIndexService } from './sourceIndex';
 import { SourceTutorButton } from '../tutor/SourceTutorBridge';
+import { SourcePracticeButton } from '../flashcards/SourcePracticeBridge';
 
 export function Library({
   state,
@@ -364,6 +365,10 @@ export function Library({
                   sourceId={selected.id}
                   pageIndex={Math.min(page, selected.pages.length - 1)}
                   disabled={!selectedPage?.text.trim()}
+                />
+                <SourcePracticeButton
+                  sourceId={selected.id}
+                  pageIndex={Math.min(page, selected.pages.length - 1)}
                 />
                 <button className="secondary" onClick={() => setPreview(selected)}>
                   Открыть фрагмент

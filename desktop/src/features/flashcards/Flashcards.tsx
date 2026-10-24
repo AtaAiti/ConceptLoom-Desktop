@@ -1,7 +1,8 @@
 import { Dialog } from '../../components/Dialog';
 import { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { Empty, Field, PageHeading, Panel } from '../../components/ui';
+import { Empty, PageHeading, Panel } from '../../components/ui';
+import { CardFields } from './CardFields';
 import { newCard } from '../../learning/reviews';
 import { Citations } from '../library/SourceContext';
 import type { Commit } from '../../hooks/useWorkspace';
@@ -92,20 +93,11 @@ export function Flashcards({
             }}
           >
             <h2>Flashcard</h2>
-            <Field label="Лицевая сторона · вопрос">
-              <textarea
-                required
-                value={edit.front}
-                onChange={(e) => setEdit({ ...edit, front: e.target.value })}
-              />
-            </Field>
-            <Field label="Обратная сторона · ответ">
-              <textarea
-                required
-                value={edit.back}
-                onChange={(e) => setEdit({ ...edit, back: e.target.value })}
-              />
-            </Field>
+            <CardFields
+              front={edit.front}
+              back={edit.back}
+              onChange={(value) => setEdit({ ...edit, ...value })}
+            />
             <div className="button-row">
               <button className="primary">Сохранить карточку</button>
               <button type="button" className="secondary" onClick={() => setEdit(null)}>

@@ -4,6 +4,7 @@ import type { Workspace } from '../../types/state';
 import type { Source } from '../../types/sources';
 import type { Commit } from '../../hooks/useWorkspace';
 import { SourceTutorButton } from '../tutor/SourceTutorBridge';
+import { SourcePracticeButton } from '../flashcards/SourcePracticeBridge';
 
 export function SourceDialogs({
   state,
@@ -136,6 +137,11 @@ export function SourceDialogs({
               </button>
             </div>
             <p className="prose source-page">{preview.pages[page].text}</p>
+            <SourcePracticeButton
+              sourceId={preview.id}
+              pageIndex={page}
+              onSelect={() => setPreview(null)}
+            />
             <SourceTutorButton
               sourceId={preview.id}
               pageIndex={page}

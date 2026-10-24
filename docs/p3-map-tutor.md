@@ -1,6 +1,6 @@
 # P3: вопрос о выбранном понятии карты
 
-Desktop 0.3.4. Третий срез из [продуктового плана](notebooklm-product-review.md), поверх [P1](p1-source-tutor.md) и [P2](p2-saved-explanations.md). Следующая сессия — **P4: две карточки из фрагмента**, затем P5 → P6.
+Desktop 0.3.4. Третий срез из [продуктового плана](notebooklm-product-review.md), поверх [P1](p1-source-tutor.md) и [P2](p2-saved-explanations.md). В 0.3.5 добавлен [P4: две карточки из фрагмента](p4-source-flashcards.md). Следующая сессия — **P5: паспорт источника с честным покрытием**, затем P6.
 
 ## Что получает пользователь
 

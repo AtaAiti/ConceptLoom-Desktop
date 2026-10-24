@@ -212,6 +212,43 @@ mod tests {
         std::fs::remove_file(path).unwrap();
     }
     #[test]
+    fn source_cards_reopen_with_citations_and_failed_batch_is_atomic() {
+        let path = std::env::temp_dir().join(format!(
+            "conceptloom-source-cards-{}-{}.sqlite3",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let mut db = crate::database::open(&path).unwrap();
+        let mut p = patch();
+        p["upserts"]["courses"] = json!([{"id":"c","workspaceId":"my-learning"}]);
+        let card = json!({"id":"draft-1","courseId":"c","topicId":null,"front":"Atomicity?","back":"All or nothing","createdBy":"ai","due":"2026-10-25T10:00:00.000Z","reps":0,"state":0,"stability":0,"difficulty":0,"elapsed_days":0,"scheduled_days":0,"learning_steps":0,"lapses":0,"citations":[{"sourceId":"s","chunkId":"s:0","title":"Lecture","page":7,"excerpt":"Atomicity means all or nothing"}]});
+        p["upserts"]["cards"] = json!([card]);
+        apply(&mut db, &p).unwrap();
+        drop(db);
+        let mut reopened = crate::database::open(&path).unwrap();
+        assert_eq!(
+            crate::database::load(&reopened).unwrap().unwrap()["cards"],
+            json!([card])
+        );
+        let mut bad = patch();
+        let mut valid_new = card.clone();
+        valid_new["id"] = json!("draft-2");
+        let mut invalid_new = card.clone();
+        invalid_new["id"] = json!("draft-3");
+        invalid_new["courseId"] = json!("deleted");
+        bad["upserts"]["cards"] = json!([valid_new, invalid_new]);
+        assert!(apply(&mut reopened, &bad).is_err());
+        assert_eq!(
+            crate::database::load(&reopened).unwrap().unwrap()["cards"],
+            json!([card])
+        );
+        drop(reopened);
+        std::fs::remove_file(path).unwrap();
+    }
+    #[test]
     fn targeted_writes_preserve_other_rowids_and_atomicity() {
         let mut db = crate::database::open(std::path::Path::new(":memory:")).unwrap();
         let mut p = patch();

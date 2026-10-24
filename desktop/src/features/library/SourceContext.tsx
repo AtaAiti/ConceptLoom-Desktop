@@ -5,6 +5,7 @@ import type { SourceCitation, SourceScope } from '../../types/sources';
 import type { Commit } from '../../hooks/useWorkspace';
 import { selectedSources } from './sourceIndex';
 import { SourceTutorButton } from '../tutor/SourceTutorBridge';
+import { SourcePracticeButton } from '../flashcards/SourcePracticeBridge';
 
 export function SourceContext({
   state,
@@ -121,6 +122,7 @@ export function Citations({ citations = [] }: { citations?: SourceCitation[] }) 
             </h2>
             <p className="prose">{opened.excerpt}</p>
             <SourceTutorButton citation={opened} onSelect={() => setOpened(null)} />
+            <SourcePracticeButton citation={opened} onSelect={() => setOpened(null)} />
             <p className="muted small">
               Passage supplied to the selected AI model. Check its interpretation against this
               evidence.

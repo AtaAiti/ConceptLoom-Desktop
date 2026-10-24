@@ -27,6 +27,7 @@ import { CommandPalette } from './components/CommandPalette';
 import { workspaceView, mergeWorkspace } from './db/workspaces';
 import type { Commit } from './hooks/useWorkspace';
 import { SourceTutorBridge } from './features/tutor/SourceTutorBridge';
+import { SourcePracticeBridge } from './features/flashcards/SourcePracticeBridge';
 import { restoreTutorDraft, type TutorDraft } from './features/tutor/draft';
 import { mapQuestion, resolveTutorTopic } from './features/tutor/mapContext';
 
@@ -541,7 +542,20 @@ export default function App() {
         setPage('AI Tutor');
       }}
     >
-      {view}
+      <SourcePracticeBridge
+        key={activeId}
+        state={state}
+        courseId={course?.id}
+        provider={provider}
+        commit={commit}
+        createCourse={() => setPage('Courses')}
+        openCards={(destination) => {
+          setCourseId(destination);
+          setPage('Flashcards');
+        }}
+      >
+        {view}
+      </SourcePracticeBridge>
     </SourceTutorBridge>
   );
 }
