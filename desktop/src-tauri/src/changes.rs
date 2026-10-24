@@ -168,6 +168,49 @@ mod tests {
         p
     }
     #[test]
+    fn saved_explanation_survives_reopen_and_unbookmark_preserves_reply_and_citations() {
+        let path = std::env::temp_dir().join(format!(
+            "conceptloom-bookmark-{}-{}.sqlite3",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let mut db = crate::database::open(&path).unwrap();
+        let mut p = patch();
+        p["upserts"]["courses"] = json!([{"id":"c","workspaceId":"my-learning"}]);
+        let answer = json!({"id":"answer","courseId":"c","role":"assistant","content":"All or nothing","savedAt":"2026-10-25T10:00:00.000Z","citations":[{"sourceId":"deleted-source","chunkId":"deleted-source:0","title":"Lecture","page":7,"excerpt":"Atomicity"}]});
+        p["upserts"]["messages"] = json!([answer]);
+        apply(&mut db, &p).unwrap();
+        drop(db);
+        let mut reopened = crate::database::open(&path).unwrap();
+        assert_eq!(
+            crate::database::load(&reopened).unwrap().unwrap()["messages"][0],
+            answer
+        );
+        let mut unsaved = answer.clone();
+        unsaved.as_object_mut().unwrap().remove("savedAt");
+        let mut update = patch();
+        update["upserts"]["messages"] = json!([unsaved]);
+        apply(&mut reopened, &update).unwrap();
+        assert_eq!(
+            crate::database::load(&reopened).unwrap().unwrap()["messages"][0],
+            unsaved
+        );
+        update["deletes"]["courses"] = json!(["c"]);
+        update["upserts"]["messages"] = json!([]);
+        apply(&mut reopened, &update).unwrap();
+        assert!(
+            crate::database::load(&reopened).unwrap().unwrap()["messages"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+        drop(reopened);
+        std::fs::remove_file(path).unwrap();
+    }
+    #[test]
     fn targeted_writes_preserve_other_rowids_and_atomicity() {
         let mut db = crate::database::open(std::path::Path::new(":memory:")).unwrap();
         let mut p = patch();

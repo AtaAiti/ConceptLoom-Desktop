@@ -1,12 +1,16 @@
 import { PageHeading, Panel } from '../../components/ui';
 import { DesignIcon, type DesignIconName } from '../../components/DesignIcon';
 import type { Workspace } from '../../types/state';
+import type { Commit } from '../../hooks/useWorkspace';
+import { SavedExplanations } from './SavedExplanations';
 export function StudyHub({
   state,
   navigate,
+  commit,
 }: {
   state: Workspace;
   navigate: (page: string) => void;
+  commit: Commit;
 }) {
   const due = state.cards.filter((c) => new Date(c.due) <= new Date()).length;
   const modes: { page: string; title: string; detail: string; icon: DesignIconName }[] = [
@@ -88,6 +92,7 @@ export function StudyHub({
             </h3>
             <p>Откройте карту, выберите понятие и проверьте понимание.</p>
           </button>
+          <SavedExplanations state={state} commit={commit} navigate={navigate} />
         </div>
         <aside>
           <Panel title="Стоит повторить">

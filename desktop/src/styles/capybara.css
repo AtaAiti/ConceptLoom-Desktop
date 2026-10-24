@@ -1196,3 +1196,89 @@ dialog.modal-backdrop:not([open]) {
   background: var(--raised);
   border-radius: 6px;
 }
+.explanation-bookmark {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 12px;
+}
+.explanation-bookmark > button,
+.saved-explanations h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.explanation-bookmark > p {
+  flex-basis: 100%;
+}
+.saved-explanations {
+  margin-top: 20px;
+}
+.saved-explanations > .section-line {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.saved-explanations h2 {
+  font-size: 18px;
+}
+.saved-explanation-filter {
+  display: grid;
+  gap: 6px;
+  margin: 16px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.saved-explanation-filter select {
+  width: 100%;
+  min-width: 0;
+}
+.saved-explanations-empty {
+  padding: 16px 0;
+}
+.saved-explanation-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+  display: grid;
+  gap: 10px;
+}
+.saved-explanation-card {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.saved-explanation-card:hover {
+  border-color: var(--accent);
+}
+.saved-explanation-preview {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.6;
+}
+.saved-explanation-detail > .section-line {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.saved-explanation-detail .prose {
+  overflow-wrap: anywhere;
+}
+.saved-explanation-question {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  margin: 16px 0;
+}
+.saved-explanation-content {
+  margin: 20px 0;
+}

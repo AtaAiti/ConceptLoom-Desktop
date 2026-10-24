@@ -119,7 +119,10 @@ export function Courses({
       {deleting && (
         <Dialog label="Удалить направление" onClose={() => setDeleting(null)}>
           <Panel title={`Удалить ${deleting.name}?`}>
-            <p>This permanently removes its lessons, cards, notes, and progress.</p>
+            <p>
+              Уроки, карточки, заметки, переписка, сохранённые объяснения и прогресс этого
+              направления будут удалены безвозвратно.
+            </p>
             <div className="button-row">
               <button
                 className="primary"

@@ -362,7 +362,7 @@ export default function App() {
           )}
           {page === 'Dashboard' && <Dashboard state={state} navigate={setPage} learn={learn} />}
           {page === 'Today' && <Today state={state} navigate={setPage} learn={learn} />}
-          {page === 'Study' && <StudyHub state={state} navigate={setPage} />}
+          {page === 'Study' && <StudyHub state={state} navigate={setPage} commit={commit} />}
           {page === 'Roadmap' && (
             <Roadmap
               state={state}

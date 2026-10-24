@@ -10,6 +10,7 @@ import type { Commit } from '../../hooks/useWorkspace';
 import type { Course, Topic, Workspace } from '../../types/state';
 import { resolvePinnedSource } from '../library/sourceIndex';
 import type { TutorDraft } from './draft';
+import { SaveExplanationButton } from './SaveExplanationButton';
 
 export function Tutor({
   state,
@@ -202,6 +203,13 @@ export function Tutor({
                 <span>{message.role === 'assistant' ? 'CONCEPTLOOM' : 'YOU'}</span>
                 <p className="prose">{message.content}</p>
                 <Citations citations={message.citations} />
+                {message.role === 'assistant' && (
+                  <SaveExplanationButton
+                    message={message}
+                    workspaceId={state.activeWorkspaceId}
+                    commit={commit}
+                  />
+                )}
                 {message.role === 'user' &&
                   message.pinnedSource &&
                   !history.some((m) => m.replyTo === message.id) && (
