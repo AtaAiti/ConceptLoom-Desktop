@@ -63,6 +63,8 @@ export function validateWorkspace(input: unknown): Workspace {
     if (!state.cards.some((c) => c.id === review.cardId && c.courseId === review.courseId))
       throw new Error('A review refers to a missing card.');
   for (const message of state.messages) {
+    if (message.topicId && message.pinnedSource)
+      throw new Error('A tutor question must use either a map concept or a pinned passage.');
     if (message.savedAt && message.role !== 'assistant')
       throw new Error('Only tutor explanations can be saved.');
     if (

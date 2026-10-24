@@ -8,9 +8,10 @@ import { SourceContext, Citations } from '../library/SourceContext';
 import type { AIMessage, AIProvider } from '../../ai/providers/ollama';
 import type { Commit } from '../../hooks/useWorkspace';
 import type { Course, Topic, Workspace } from '../../types/state';
-import { resolvePinnedSource } from '../library/sourceIndex';
+import { resolvePinnedSource, selectedSources } from '../library/sourceIndex';
 import type { TutorDraft } from './draft';
 import { SaveExplanationButton } from './SaveExplanationButton';
+import { mapSourceChunks, mapTutorInstruction, resolveTutorTopic } from './mapContext';
 
 export function Tutor({
   state,
@@ -22,6 +23,8 @@ export function Tutor({
   draft,
   updateDraft,
   readSource,
+  readMap,
+  clearTopic,
   working,
   setWorking,
 }: {
@@ -34,6 +37,8 @@ export function Tutor({
   draft: TutorDraft;
   updateDraft: (next: TutorDraft) => void;
   readSource: () => void;
+  readMap: () => void;
+  clearTopic: () => void;
   working: boolean;
   setWorking: (value: boolean) => void;
 }) {
@@ -48,6 +53,18 @@ export function Tutor({
       return errorMessage(e);
     }
   }, [state.sources, state.activeWorkspaceId, draft.pinned]);
+  const mapContext = useMemo(() => {
+    if (!draft.topicId || !course) return undefined;
+    try {
+      const selected = resolveTutorTopic(state, course.id, draft.topicId);
+      mapSourceChunks(state, course.id, selected.id, course.sourceScope ?? { kind: 'none' });
+      return { topic: selected, error: '' };
+    } catch (e) {
+      return { topic: undefined, error: errorMessage(e) };
+    }
+  }, [state.topics, state.sources, state.activeWorkspaceId, course, draft.topicId]);
+  const contextError = pinnedError || mapContext?.error;
+  const currentTopic = draft.topicId ? mapContext?.topic : topic;
   if (!course)
     return (
       <Empty
@@ -55,20 +72,32 @@ export function Tutor({
         description="Создайте или выберите учебное направление."
       />
     );
-  const history = state.messages.filter((m) => m.courseId === course.id);
+  const history = state.messages.filter(
+    (m) => m.courseId === course.id && (!draft.topicId || m.topicId === draft.topicId),
+  );
+  const allowedSourceIds = new Set(
+    selectedSources(state, course.sourceScope ?? { kind: 'none' }).map((s) => s.id),
+  );
   async function send() {
     if (!course || !draft.question.trim() || working || inFlight.current) return;
     const input = draft.question.trim();
     const pinned = draft.pinned;
+    const selectedTopicId = draft.topicId;
     inFlight.current = true;
     setWorking(true);
     setRequestError('');
     try {
       if (pinned) resolvePinnedSource(state, pinned);
+      const selectedTopic = selectedTopicId
+        ? resolveTutorTopic(state, course.id, selectedTopicId)
+        : undefined;
+      if (selectedTopicId)
+        mapSourceChunks(state, course.id, selectedTopicId, course.sourceScope ?? { kind: 'none' });
       const pending = history.find(
         (m) =>
           m.id === draft.retryMessageId &&
           m.role === 'user' &&
+          m.topicId === selectedTopicId &&
           m.content === input &&
           JSON.stringify(m.pinnedSource) === JSON.stringify(pinned),
       );
@@ -86,6 +115,7 @@ export function Tutor({
                   role: 'user',
                   content: input,
                   pinnedSource: pinned,
+                  topicId: selectedTopicId,
                   createdAt: new Date().toISOString(),
                 },
               ],
@@ -93,10 +123,18 @@ export function Tutor({
       );
       // Keep the draft until the answer is durably saved. Retry reuses this user message.
       updateDraft({ ...draft, retryMessageId: messageId });
-      const prior = history.filter((m) => m.id !== messageId);
+      const prior = history.filter(
+        (m) => m.id !== messageId && (!selectedTopicId || m.topicId === selectedTopicId),
+      );
       const messages: AIMessage[] = [
-        { role: 'system', content: systemPrompt(course) },
-        { role: 'user', content: `Learner context (data): ${tutorContext(state, course, topic)}` },
+        {
+          role: 'system',
+          content: `${systemPrompt(course)}\n${selectedTopic ? mapTutorInstruction : ''}`,
+        },
+        {
+          role: 'user',
+          content: `Learner context (data): ${tutorContext(state, course, selectedTopic ?? topic)}`,
+        },
         ...prior.slice(-10).map((m) => ({ role: m.role, content: m.content.slice(0, 1200) })),
         { role: 'user', content: input },
       ];
@@ -114,6 +152,7 @@ export function Tutor({
               scope,
               pinned ? 'sources-only' : (course.sourceMode ?? 'sources-only'),
               pinned,
+              selectedTopicId,
             );
       await commit((s) =>
         s.messages.some((m) => m.replyTo === messageId)
@@ -129,6 +168,7 @@ export function Tutor({
                   content: answer.content,
                   replyTo: messageId,
                   pinnedSource: pinned,
+                  topicId: selectedTopicId,
                   citations: answer.citations,
                   provenance:
                     scope.kind === 'none'
@@ -141,7 +181,7 @@ export function Tutor({
               ],
             },
       );
-      updateDraft({ id: crypto.randomUUID(), question: '', pinned });
+      updateDraft({ id: crypto.randomUUID(), question: '', pinned, topicId: selectedTopicId });
     } catch (e) {
       setRequestError(errorMessage(e));
       throw e;
@@ -154,9 +194,54 @@ export function Tutor({
     <>
       <PageHeading
         eyebrow="ВАШ ИИ / РЕПЕТИТОР"
-        title={topic?.title ?? 'Репетитор'}
+        title={currentTopic?.title ?? 'Репетитор'}
         description="Репетитор · одна связь за раз · объяснение с опорой на ваши материалы"
       />
+      {mapContext && (
+        <section className="pinned-context" aria-label="Понятие с карты">
+          <div className="section-line">
+            <strong>{mapContext.topic?.title ?? 'Понятие недоступно'}</strong>
+            <button
+              className="text-button"
+              disabled={working}
+              onClick={() => {
+                setRequestError('');
+                updateDraft({ id: crypto.randomUUID(), question: draft.question });
+                clearTopic();
+              }}
+            >
+              Убрать понятие
+            </button>
+          </div>
+          {mapContext.topic && (
+            <>
+              <p className="prose">{mapContext.topic.description}</p>
+              <p className="muted small">
+                Предпосылки:{' '}
+                {mapContext.topic.dependsOn
+                  .map(
+                    (id) =>
+                      state.topics.find((t) => t.id === id && t.courseId === course.id)?.title,
+                  )
+                  .join(' · ') || 'Можно начать здесь'}
+              </p>
+            </>
+          )}
+          <p className="muted small">
+            Связи карты — учебный план. Для ответа используются выбранные источники направления.
+            Объяснение не засчитывается как проверка знаний.
+          </p>
+          {(course.sourceScope?.kind ?? 'none') === 'none' && (
+            <p className="muted small">
+              Источники не выбраны: ответ будет из знаний модели, без цитат.
+            </p>
+          )}
+          <button className="text-button" onClick={readMap}>
+            Вернуться к карте
+          </button>
+          {mapContext.error && <p role="alert">{mapContext.error}</p>}
+        </section>
+      )}
       {draft.pinned ? (
         <section className="pinned-context" aria-label="Выбранный фрагмент">
           <div className="section-line">
@@ -211,7 +296,7 @@ export function Tutor({
                   />
                 )}
                 {message.role === 'user' &&
-                  message.pinnedSource &&
+                  (message.pinnedSource || message.topicId) &&
                   !history.some((m) => m.replyTo === message.id) && (
                     <button
                       className="text-button"
@@ -222,6 +307,7 @@ export function Tutor({
                           id: crypto.randomUUID(),
                           question: message.content,
                           pinned: message.pinnedSource,
+                          topicId: message.topicId,
                           retryMessageId: message.id,
                         });
                       }}
@@ -256,7 +342,7 @@ export function Tutor({
             <button
               className="primary"
               aria-label="Send question"
-              disabled={working || !!pinnedError || !draft.question.trim()}
+              disabled={working || !!contextError || !draft.question.trim()}
             >
               <Send size={18} /> {draft.retryMessageId ? 'Повторить запрос' : 'Отправить'}
             </button>
@@ -267,7 +353,9 @@ export function Tutor({
             <Citations
               citations={
                 [...history].reverse().find((m) => m.citations?.length)?.citations ??
-                topic?.citations
+                currentTopic?.citations?.filter(
+                  (c) => !draft.topicId || allowedSourceIds.has(c.sourceId),
+                )
               }
             />
             <div className="context-item">
@@ -276,7 +364,7 @@ export function Tutor({
             </div>
             <div className="context-item">
               <small>ТЕКУЩАЯ СВЯЗЬ</small>
-              <strong>{topic?.title ?? 'Выберите понятие на карте'}</strong>
+              <strong>{currentTopic?.title ?? 'Выберите понятие на карте'}</strong>
             </div>
             <div className="context-item">
               <small>ЦЕЛЬ</small>

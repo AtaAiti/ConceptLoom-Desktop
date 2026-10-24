@@ -2,8 +2,23 @@ import type { Course, Topic, Workspace } from '../../types/state';
 import { topicMastery } from '../../learning/mastery';
 export function tutorContext(state: Workspace, course: Course, topic?: Topic): string {
   const topics = state.topics.filter((t) => t.courseId === course.id);
+  const selected = topics.find((t) => t.id === topic?.id);
   return JSON.stringify({
-    currentTopic: topic?.title,
+    currentTopic: selected?.title,
+    currentConcept: selected && {
+      id: selected.id,
+      description: selected.description.slice(0, 1200),
+      prerequisiteCount: selected.dependsOn.length,
+      prerequisites: selected.dependsOn.slice(0, 24).map((id) => {
+        const prerequisite = topics.find((t) => t.id === id);
+        return {
+          id,
+          title: prerequisite?.title,
+          description: prerequisite?.description.slice(0, 400),
+          mastery: topicMastery(state, id),
+        };
+      }),
+    },
     goal: course.goal,
     concepts: topics
       .slice(0, 24)

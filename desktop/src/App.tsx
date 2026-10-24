@@ -28,6 +28,7 @@ import { workspaceView, mergeWorkspace } from './db/workspaces';
 import type { Commit } from './hooks/useWorkspace';
 import { SourceTutorBridge } from './features/tutor/SourceTutorBridge';
 import { restoreTutorDraft, type TutorDraft } from './features/tutor/draft';
+import { mapQuestion, resolveTutorTopic } from './features/tutor/mapContext';
 
 const navigation: { title: string; label: string; icon: DesignIconName; group: string }[] = [
   { title: 'Home', label: 'Главная', icon: 'imgHouse', group: 'global' },
@@ -400,6 +401,25 @@ export default function App() {
               provider={provider}
               learn={learn}
               run={run}
+              selectedTopicId={topicId}
+              selectTopic={(selected) => setTopicId(selected.id)}
+              ask={(selected, kind) =>
+                run(async () => {
+                  const current = resolveTutorTopic(state, selected.courseId, selected.id);
+                  const key = JSON.stringify([activeId, current.courseId]);
+                  setTutorDrafts((drafts) => ({
+                    ...drafts,
+                    [key]: {
+                      id: crypto.randomUUID(),
+                      topicId: current.id,
+                      question: mapQuestion(current, kind),
+                    },
+                  }));
+                  setCourseId(current.courseId);
+                  setTopicId(current.id);
+                  setPage('AI Tutor');
+                })
+              }
             />
           )}
           {page === 'Learn' && (
@@ -423,6 +443,11 @@ export default function App() {
               key={tutorKey}
               draft={tutorDraft}
               working={tutorBusy[tutorKey] ?? false}
+              readMap={() => {
+                setTopicId(tutorDraft.topicId ?? '');
+                setPage('Knowledge Map');
+              }}
+              clearTopic={() => setTopicId('')}
               setWorking={(busy) => setTutorBusy((requests) => ({ ...requests, [tutorKey]: busy }))}
               readSource={() => {
                 const pinned = tutorDraft.pinned;

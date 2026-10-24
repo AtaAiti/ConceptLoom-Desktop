@@ -1282,3 +1282,22 @@ dialog.modal-backdrop:not([open]) {
 .saved-explanation-content {
   margin: 20px 0;
 }
+.map-tutor-actions {
+  display: grid;
+  gap: 6px;
+  padding: 12px 0;
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.map-tutor-actions .text-button {
+  justify-self: start;
+}
+.map-details > select {
+  width: 100%;
+  min-width: 0;
+  margin: 12px 0;
+}
+.map-details,
+.pinned-context {
+  overflow-wrap: anywhere;
+}

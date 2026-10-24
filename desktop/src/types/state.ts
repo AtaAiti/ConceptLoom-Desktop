@@ -171,6 +171,7 @@ export const reviewSchema = z.object({
 });
 export const messageSchema = z.object({
   id,
+  topicId: id.optional(),
   savedAt: date.optional(),
   pinnedSource: pinnedSourceSchema.optional(),
   replyTo: id.optional(),

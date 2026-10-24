@@ -180,7 +180,8 @@ mod tests {
         let mut db = crate::database::open(&path).unwrap();
         let mut p = patch();
         p["upserts"]["courses"] = json!([{"id":"c","workspaceId":"my-learning"}]);
-        let answer = json!({"id":"answer","courseId":"c","role":"assistant","content":"All or nothing","savedAt":"2026-10-25T10:00:00.000Z","citations":[{"sourceId":"deleted-source","chunkId":"deleted-source:0","title":"Lecture","page":7,"excerpt":"Atomicity"}]});
+        p["upserts"]["topics"] = json!([{"id":"map-topic","courseId":"c","dependsOn":[]}]);
+        let answer = json!({"id":"answer","courseId":"c","topicId":"map-topic","role":"assistant","content":"All or nothing","savedAt":"2026-10-25T10:00:00.000Z","citations":[{"sourceId":"deleted-source","chunkId":"deleted-source:0","title":"Lecture","page":7,"excerpt":"Atomicity"}]});
         p["upserts"]["messages"] = json!([answer]);
         apply(&mut db, &p).unwrap();
         drop(db);

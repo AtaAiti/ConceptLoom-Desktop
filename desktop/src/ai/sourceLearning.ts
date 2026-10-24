@@ -10,6 +10,11 @@ import type {
 import type { AIProvider } from './providers/ollama';
 import { systemPrompt } from './prompts/system';
 import { tutorContext } from './prompts/tutor';
+import {
+  mapSourceChunks,
+  mapTutorInstruction,
+  resolveTutorTopic,
+} from '../features/tutor/mapContext';
 import { sourcePolicy, sourceData } from './prompts/sources';
 import {
   chunkSource,
@@ -82,11 +87,23 @@ export async function answerFromSources(
   scope: SourceScope,
   mode: SourceMode,
   pinned?: PinnedSource,
+  topicId?: string,
 ): Promise<{ content: string; citations: SourceCitation[] }> {
+  const topic = topicId ? resolveTutorTopic(state, course.id, topicId) : undefined;
+  const topicChunks = topicId && !pinned ? mapSourceChunks(state, course.id, topicId, scope) : [];
   // A direct reading question uses exactly the reviewed fragment, never a fresh lexical guess.
-  const chunks = pinned
+  const retrieved = pinned
     ? [resolvePinnedSource(state, pinned)]
-    : await sourceIndex.search(state, scope, question);
+    : await sourceIndex.search(
+        state,
+        scope,
+        topic
+          ? `${topic.title} ${topic.dependsOn.map((id) => state.topics.find((t) => t.id === id)?.title ?? '').join(' ')} ${question}`
+          : question,
+      );
+  const chunks = [
+    ...new Map([...topicChunks, ...retrieved].map((chunk) => [chunk.id, chunk])).values(),
+  ].slice(0, 6);
   if (pinned) mode = 'sources-only';
   if (!chunks.length && mode === 'sources-only')
     return {
@@ -98,16 +115,17 @@ export async function answerFromSources(
     [
       {
         role: 'system',
-        content: `${systemPrompt(course)}\n${sourcePolicy(mode)}\nReturn sourceAnswer (supported claims only, empty if none), generalAnswer (empty in sources-only mode), and citationIds. Keep answers short and finish with a retrieval question.`,
+        content: `${systemPrompt(course)}\n${sourcePolicy(mode)}\n${topic ? mapTutorInstruction : ''}\nReturn sourceAnswer (supported claims only, empty if none), generalAnswer (empty in sources-only mode), and citationIds. Keep answers short and finish with a retrieval question.`,
       },
       {
         role: 'user',
-        content: `Learner context (data): ${pinned ? JSON.stringify({ goal: course.goal.slice(0, 1200) }) : tutorContext(state, course)}`,
+        content: `Learner context (data): ${pinned ? JSON.stringify({ goal: course.goal.slice(0, 1200) }) : tutorContext(state, course, topic)}`,
       },
       ...state.messages
         .filter(
           (m) =>
             m.courseId === course.id &&
+            (!topicId || m.topicId === topicId) &&
             (!pinned ||
               (m.pinnedSource?.workspaceId === pinned.workspaceId &&
                 m.pinnedSource.chunkId === pinned.chunkId &&

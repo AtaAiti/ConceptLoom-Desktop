@@ -20,6 +20,7 @@ import { knowledgeMapPrompt } from '../../ai/prompts/knowledgeMap';
 import type { AIProvider } from '../../ai/providers/ollama';
 import type { Commit } from '../../hooks/useWorkspace';
 import type { Course, Topic, Workspace } from '../../types/state';
+import type { MapQuestion } from '../tutor/mapContext';
 
 export function KnowledgeMap({
   state,
@@ -28,6 +29,9 @@ export function KnowledgeMap({
   provider,
   learn,
   run,
+  selectedTopicId,
+  selectTopic,
+  ask,
 }: {
   state: Workspace;
   course?: Course;
@@ -35,8 +39,10 @@ export function KnowledgeMap({
   provider: AIProvider;
   learn: (topic: Topic) => void;
   run: (task: () => Promise<void>) => void;
+  selectedTopicId: string;
+  selectTopic: (topic: Topic) => void;
+  ask: (topic: Topic, kind: MapQuestion) => void;
 }) {
-  const [selectedId, setSelectedId] = useState('');
   const [edit, setEdit] = useState<Topic | null>(null);
   const [proposal, setProposal] = useState<Topic[]>([]);
   const [working, setWorking] = useState(false);
@@ -49,7 +55,7 @@ export function KnowledgeMap({
     );
   const topics = state.topics.filter((t) => t.courseId === course.id);
   const selected =
-    topics.find((t) => t.id === selectedId) ??
+    topics.find((t) => t.id === selectedTopicId) ??
     topics.find((t) => topicStatus(state, t) !== 'locked') ??
     topics[0];
   const depths = topicDepths(topics);
@@ -94,7 +100,7 @@ export function KnowledgeMap({
   );
   const onClick: NodeMouseHandler = (_event, node) => {
     const topic = topics.find((t) => t.id === node.id);
-    if (topic) setSelectedId(topic.id);
+    if (topic) selectTopic(topic);
   };
   const connect = (connection: Connection) =>
     run(async () => {
@@ -253,7 +259,21 @@ export function KnowledgeMap({
           </div>
           {selected && (
             <aside className="map-details">
-              <span className="status-pill">СЛЕДУЮЩАЯ СВЯЗЬ</span>
+              <span className="status-pill">ВЫБРАННОЕ ПОНЯТИЕ</span>
+              <select
+                aria-label="Выбранное понятие карты"
+                value={selected.id}
+                onChange={(e) => {
+                  const topic = topics.find((t) => t.id === e.target.value);
+                  if (topic) selectTopic(topic);
+                }}
+              >
+                {topics.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
+                ))}
+              </select>
               <h2>{selected.title}</h2>
               <p className="muted">{selected.description}</p>
               <small>ПРЕДПОСЫЛКИ</small>
@@ -262,6 +282,20 @@ export function KnowledgeMap({
                   .map((id) => topics.find((t) => t.id === id)?.title)
                   .join(' · ') || 'Можно начать здесь'}
               </p>
+              <div className="map-tutor-actions">
+                <button className="secondary" onClick={() => ask(selected, 'connection')}>
+                  {selected.dependsOn.length ? 'Почему это связано?' : 'С чего начать?'}
+                </button>
+                <button className="text-button" onClick={() => ask(selected, 'example')}>
+                  Объясни на примере
+                </button>
+                <p className="muted small">
+                  Отправка — у репетитора. Обсуждение не меняет прогресс.
+                </p>
+                {topicStatus(state, selected) === 'locked' && (
+                  <p className="muted small">Обсуждать можно; занятие пока недоступно.</p>
+                )}
+              </div>
               <hr />
               <h3>Что подтверждено</h3>
               {['recognition', 'recall', 'application', 'transfer'].map((d, i) => (
