@@ -168,6 +168,48 @@ mod tests {
         p
     }
     #[test]
+    fn source_guide_roundtrips_without_rebuilding_the_text_index() {
+        let path = std::env::temp_dir().join(format!(
+            "conceptloom-guide-{}-{}.sqlite3",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let mut db = crate::database::open(&path).unwrap();
+        let mut p = patch();
+        p["upserts"]["libraries"] = json!([{"id":"lib","workspaceId":"my-learning"}]);
+        let mut source = json!({"id":"s","workspaceId":"my-learning","libraryIds":["lib"],"courseIds":[],"pages":[{"page":7,"text":"Atomicity means all or nothing"}]});
+        p["upserts"]["sources"] = json!([source]);
+        apply(&mut db, &p).unwrap();
+        db.execute_batch("CREATE TABLE guide_index_audit(value TEXT); CREATE TRIGGER guide_chunk_deletes AFTER DELETE ON source_chunks BEGIN INSERT INTO guide_index_audit VALUES('deleted'); END;").unwrap();
+        let before = source_index::search(&db, "my-learning", &["s".into()], "Atomicity").unwrap();
+        // Payload storage is generic; ownership and full guide shape are validated in TypeScript.
+        source["guide"] = json!({"sourceId":"s","workspaceId":"my-learning","sourceHash":"hash","coveredPages":[{"pageIndex":0,"page":7}],"result":{"points":[{"text":"All or nothing","citationIds":["s:0"]}]},"citations":[{"chunkId":"s:0","sourceId":"s","title":"Lecture","page":7,"excerpt":"Atomicity means all or nothing"}]});
+        let mut update = patch();
+        update["upserts"]["sources"] = json!([source]);
+        apply(&mut db, &update).unwrap();
+        assert_eq!(
+            db.query_row("SELECT count(*) FROM guide_index_audit", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            source_index::search(&db, "my-learning", &["s".into()], "Atomicity").unwrap(),
+            before
+        );
+        drop(db);
+        let reopened = crate::database::open(&path).unwrap();
+        assert_eq!(
+            crate::database::load(&reopened).unwrap().unwrap()["sources"][0],
+            source
+        );
+        drop(reopened);
+        std::fs::remove_file(path).unwrap();
+    }
+    #[test]
     fn saved_explanation_survives_reopen_and_unbookmark_preserves_reply_and_citations() {
         let path = std::env::temp_dir().join(format!(
             "conceptloom-bookmark-{}-{}.sqlite3",

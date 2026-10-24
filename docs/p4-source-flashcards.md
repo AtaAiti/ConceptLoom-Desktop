@@ -1,6 +1,6 @@
 # P4: две карточки из выбранного фрагмента
 
-Desktop 0.3.5. Четвёртый срез из [продуктового плана](notebooklm-product-review.md), поверх [P1](p1-source-tutor.md), [P2](p2-saved-explanations.md) и [P3](p3-map-tutor.md). Следующая сессия — **P5: паспорт источника с честным покрытием**, затем P6.
+Desktop 0.3.5. Четвёртый срез из [продуктового плана](notebooklm-product-review.md), поверх [P1](p1-source-tutor.md), [P2](p2-saved-explanations.md) и [P3](p3-map-tutor.md). Затем реализован [P5: обзор раздела с честным покрытием](p5-source-guide.md) в Desktop 0.3.6. Следующая сессия — P6.
 
 ## Пользовательский путь
 

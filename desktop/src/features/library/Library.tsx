@@ -10,6 +10,8 @@ import { materialText, materialTitle, readMaterialPages, MAX_TEXT_CHARACTERS } f
 import { sourceIndex, type SourceIndexService } from './sourceIndex';
 import { SourceTutorButton } from '../tutor/SourceTutorBridge';
 import { SourcePracticeButton } from '../flashcards/SourcePracticeBridge';
+import type { AIProvider } from '../../ai/providers/types';
+import { SourceGuideDialog } from './SourceGuideDialog';
 
 export function Library({
   state,
@@ -17,8 +19,11 @@ export function Library({
   run,
   initialSourceId,
   initialPage = 0,
+  provider,
+  course,
 }: {
   state: Workspace;
+  provider: AIProvider;
   course?: Course;
   commit: Commit;
   run: (task: () => Promise<void>) => void;
@@ -43,6 +48,7 @@ export function Library({
   const [page, setPage] = useState(initialPage);
   const [removing, setRemoving] = useState<Source | null>(null);
   const [limit, setLimit] = useState(30);
+  const [guideSourceId, setGuideSourceId] = useState('');
   const sources = state.sources.filter(
     (s) =>
       (!libraryId || s.libraryIds.includes(libraryId)) && (format === 'all' || s.type === format),
@@ -361,6 +367,9 @@ export function Library({
                   : 'Добавьте теги и прикрепите материал к учебному направлению.'}
               </p>
               <div className="button-row">
+                <button className="secondary" onClick={() => setGuideSourceId(selected.id)}>
+                  Обзор раздела
+                </button>
                 <SourceTutorButton
                   sourceId={selected.id}
                   pageIndex={Math.min(page, selected.pages.length - 1)}
@@ -440,6 +449,18 @@ export function Library({
             </form>
           </section>
         </Dialog>
+      )}
+      {guideSourceId && (
+        <SourceGuideDialog
+          key={guideSourceId}
+          state={state}
+          sourceId={guideSourceId}
+          initialIndex={page}
+          outputLanguage={course?.explanationLanguage ?? state.settings.explanationLanguage}
+          provider={provider}
+          commit={commit}
+          onClose={() => setGuideSourceId('')}
+        />
       )}
       <SourceDialogs
         state={state}

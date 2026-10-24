@@ -1611,3 +1611,57 @@ select[multiple] {
     animation: none !important;
   }
 }
+
+.modal.source-guide {
+  width: min(900px, calc(100vw - 60px));
+  overflow-wrap: anywhere;
+}
+.guide-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr;
+  gap: 12px;
+}
+.guide-controls > *,
+.guide-controls input,
+.guide-controls select {
+  min-width: 0;
+  width: 100%;
+}
+.guide-result {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.guide-result li,
+.guide-result dl > div,
+.guide-questions > div {
+  margin-bottom: 18px;
+}
+.guide-result dt {
+  font-weight: 650;
+}
+.guide-result dd {
+  margin-left: 0;
+}
+.guide-result p {
+  white-space: pre-wrap;
+}
+.source-guide .guide-result p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.source-guide .guide-result > .small {
+  font-size: 12px;
+}
+.source-guide .guide-result h3 {
+  font-size: 15px;
+  margin: 20px 0 10px;
+}
+.guide-questions button {
+  text-align: left;
+  white-space: normal;
+}
+@media (max-width: 600px) {
+  .guide-controls {
+    grid-template-columns: 1fr;
+  }
+}

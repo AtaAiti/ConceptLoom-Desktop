@@ -493,6 +493,8 @@ export default function App() {
               state={state}
               commit={commit}
               run={run}
+              provider={provider}
+              course={course}
             />
           )}
           {page === 'Settings' && <Settings state={state} commit={commit} run={run} />}
@@ -527,7 +529,7 @@ export default function App() {
       state={state}
       courseId={course?.id}
       createCourse={() => setPage('Courses')}
-      start={(destination, pinned) => {
+      start={(destination, pinned, question) => {
         const key = JSON.stringify([activeId, destination]);
         setTutorDrafts((drafts) => ({
           ...drafts,
@@ -535,6 +537,7 @@ export default function App() {
             id: crypto.randomUUID(),
             pinned,
             question:
+              question ??
               'Помоги разобрать этот фрагмент: объясни главную мысль и задай один вопрос для проверки понимания.',
           },
         }));

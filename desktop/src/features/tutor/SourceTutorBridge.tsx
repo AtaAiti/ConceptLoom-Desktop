@@ -5,11 +5,11 @@ import type { Workspace } from '../../types/state';
 import type { PinnedSource } from '../../types/sources';
 import { sourceSelectionOptions, type SourceSelection } from '../library/sourceSelection';
 
-type Selection = SourceSelection;
+type Selection = SourceSelection & { question?: string };
 const SourceTutorContext = createContext<((selection: Selection) => void) | null>(null);
 
 export function SourceTutorButton(
-  props: Selection & { disabled?: boolean; onSelect?: () => void },
+  props: Selection & { label?: string; disabled?: boolean; onSelect?: () => void },
 ) {
   const ask = useContext(SourceTutorContext);
   return ask ? (
@@ -22,7 +22,7 @@ export function SourceTutorButton(
         props.onSelect?.();
       }}
     >
-      Разобрать с репетитором
+      {props.label ?? 'Разобрать с репетитором'}
     </button>
   ) : null;
 }
@@ -36,7 +36,7 @@ export function SourceTutorBridge({
 }: {
   state: Workspace;
   courseId?: string;
-  start: (courseId: string, pinned: PinnedSource) => void;
+  start: (courseId: string, pinned: PinnedSource, question?: string) => void;
   createCourse: () => void;
   children: ReactNode;
 }) {
@@ -62,7 +62,7 @@ export function SourceTutorBridge({
         try {
           const available = options(value);
           if (available.length === 1 && state.courses.some((c) => c.id === courseId)) {
-            start(courseId!, available[0]);
+            start(courseId!, available[0], value.question);
             return;
           }
           setChosen(available.length === 1 ? available[0].chunkId : '');
@@ -134,7 +134,7 @@ export function SourceTutorBridge({
                   disabled={!pinned || !state.courses.some((c) => c.id === destination)}
                   onClick={() => {
                     if (pinned) {
-                      start(destination, pinned);
+                      start(destination, pinned, selection.question);
                       setSelection(null);
                     }
                   }}

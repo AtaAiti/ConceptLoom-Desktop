@@ -24,6 +24,11 @@ export function validateWorkspace(input: unknown): Workspace {
     if (items.some((v) => !spaces.has(v.workspaceId))) throw new Error('Missing workspace.');
   }
   for (const source of state.sources) {
+    if (
+      source.guide &&
+      (source.guide.sourceId !== source.id || source.guide.workspaceId !== source.workspaceId)
+    )
+      throw new Error('Source guide crosses source/workspace boundaries.');
     if (source.pages.reduce((sum, p) => sum + p.text.length, 0) > 1000000)
       throw new Error('Source is too large.');
     if (
