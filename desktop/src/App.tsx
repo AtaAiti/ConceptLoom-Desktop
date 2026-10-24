@@ -26,6 +26,8 @@ import { StudyHub } from './features/dashboard/StudyHub';
 import { CommandPalette } from './components/CommandPalette';
 import { workspaceView, mergeWorkspace } from './db/workspaces';
 import type { Commit } from './hooks/useWorkspace';
+import { SourceTutorBridge } from './features/tutor/SourceTutorBridge';
+import { restoreTutorDraft, type TutorDraft } from './features/tutor/draft';
 
 const navigation: { title: string; label: string; icon: DesignIconName; group: string }[] = [
   { title: 'Home', label: 'Главная', icon: 'imgHouse', group: 'global' },
@@ -55,13 +57,17 @@ export default function App() {
   const commit: Commit = (change) => commitApplication((s) => mergeWorkspace(s, activeId, change));
   const [page, setPage] = useState('Home');
   const [searchOpen, setSearchOpen] = useState(false);
-  const [sourcePreview, setSourcePreview] = useState({ id: '', request: 0 });
+  const [sourcePreview, setSourcePreview] = useState({ id: '', request: 0, pageIndex: 0 });
+  const [tutorDrafts, setTutorDrafts] = useState<Record<string, TutorDraft>>({});
+  const [tutorBusy, setTutorBusy] = useState<Record<string, boolean>>({});
   const [courseId, setCourseId] = useState('');
   const [topicId, setTopicId] = useState('');
   const [notice, setNotice] = useState('');
   const [connection, setConnection] = useState('Checking local AI…');
   const provider = useMemo(() => createProvider(state.settings), [state.settings]);
   const course = state.courses.find((c) => c.id === courseId) ?? state.courses[0];
+  const tutorKey = JSON.stringify([activeId, course?.id]);
+  const tutorDraft = tutorDrafts[tutorKey] ?? restoreTutorDraft(state, course?.id);
   const topic =
     state.topics.find((t) => t.id === topicId && t.courseId === course?.id) ??
     (course ? frontier(state, course.id)[0] : undefined);
@@ -175,7 +181,7 @@ export default function App() {
         <Onboarding state={state} commit={commit} />
       </>
     );
-  return (
+  const view = (
     <div
       className={`app-shell capybara ${page === 'Reviews' ? 'focus-mode' : ''}`}
       data-accent={application.workspaces.find((w) => w.id === activeId)?.accent ?? 'violet'}
@@ -414,7 +420,34 @@ export default function App() {
           {page === 'Reviews' && <Reviews state={state} commit={commit} run={run} />}
           {page === 'AI Tutor' && (
             <Tutor
-              key={course?.id}
+              key={tutorKey}
+              draft={tutorDraft}
+              working={tutorBusy[tutorKey] ?? false}
+              setWorking={(busy) => setTutorBusy((requests) => ({ ...requests, [tutorKey]: busy }))}
+              readSource={() => {
+                const pinned = tutorDraft.pinned;
+                if (!pinned) return;
+                const source = state.sources.find((s) => s.id === pinned.sourceId);
+                if (!source) return;
+                setSourcePreview((old) => ({
+                  id: source.id,
+                  request: old.request + 1,
+                  pageIndex: Math.max(
+                    0,
+                    source.pages.findIndex(
+                      (p) => p.page === pinned.page && p.text.includes(pinned.excerpt),
+                    ),
+                  ),
+                }));
+                setPage('Library');
+              }}
+              updateDraft={(next) =>
+                setTutorDrafts((drafts) => {
+                  // A late request must not clear a newer handoff for this course.
+                  if (drafts[tutorKey] && drafts[tutorKey].id !== tutorDraft.id) return drafts;
+                  return { ...drafts, [tutorKey]: next };
+                })
+              }
               state={state}
               course={course}
               topic={topic}
@@ -430,6 +463,7 @@ export default function App() {
             <Library
               key={`${activeId}-${sourcePreview.request}`}
               initialSourceId={sourcePreview.id}
+              initialPage={sourcePreview.pageIndex}
               state={state}
               commit={commit}
               run={run}
@@ -450,11 +484,39 @@ export default function App() {
             if (action.courseId) setCourseId(action.courseId);
             if (action.topicId) setTopicId(action.topicId);
             if (action.sourceId)
-              setSourcePreview((old) => ({ id: action.sourceId!, request: old.request + 1 }));
+              setSourcePreview((old) => ({
+                id: action.sourceId!,
+                request: old.request + 1,
+                pageIndex: 0,
+              }));
             if (action.page) setPage(action.page);
           }}
         />
       )}
     </div>
+  );
+  return (
+    <SourceTutorBridge
+      key={activeId}
+      state={state}
+      courseId={course?.id}
+      createCourse={() => setPage('Courses')}
+      start={(destination, pinned) => {
+        const key = JSON.stringify([activeId, destination]);
+        setTutorDrafts((drafts) => ({
+          ...drafts,
+          [key]: {
+            id: crypto.randomUUID(),
+            pinned,
+            question:
+              'Помоги разобрать этот фрагмент: объясни главную мысль и задай один вопрос для проверки понимания.',
+          },
+        }));
+        setCourseId(destination);
+        setPage('AI Tutor');
+      }}
+    >
+      {view}
+    </SourceTutorBridge>
   );
 }

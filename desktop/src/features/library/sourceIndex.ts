@@ -6,6 +6,7 @@ import {
   type SourceChunk,
   type SourceScope,
   type SourceCitation,
+  type PinnedSource,
 } from '../../types/sources';
 import type { Workspace } from '../../types/state';
 
@@ -46,6 +47,29 @@ export function selectedSources(state: Workspace, scope: SourceScope): Source[] 
         (scope.kind === 'library' && s.libraryIds.includes(scope.libraryId)) ||
         (scope.kind === 'selected' && scope.sourceIds.includes(s.id))),
   );
+}
+export function pageChunks(source: Source, index: number): SourceChunk[] {
+  const page = source.pages[index];
+  if (!page) return [];
+  const offset = chunkSource({ ...source, pages: source.pages.slice(0, index) }).length;
+  return chunkSource({ ...source, pages: [page] }).map((chunk, position) => ({
+    ...chunk,
+    id: `${source.id}:${offset + position}`,
+    position: offset + position,
+  }));
+}
+export function resolvePinnedSource(state: Workspace, pinned: PinnedSource): SourceChunk {
+  if (pinned.workspaceId !== state.activeWorkspaceId)
+    throw new Error('Этот фрагмент относится к другому пространству. Выберите источник заново.');
+  const source = state.sources.find(
+    (s) => s.id === pinned.sourceId && s.workspaceId === pinned.workspaceId,
+  );
+  const chunk = source && chunkSource(source).find((c) => c.id === pinned.chunkId);
+  if (!chunk || chunk.text !== pinned.excerpt || chunk.page !== pinned.page)
+    throw new Error(
+      'Источник удалён или фрагмент изменился. Выберите фрагмент заново в источниках.',
+    );
+  return chunk;
 }
 export interface SourceIndexService {
   search(state: Workspace, scope: SourceScope, query: string): Promise<SourceChunk[]>;

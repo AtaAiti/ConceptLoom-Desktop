@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   citationSchema,
+  pinnedSourceSchema,
   defaultWorkspace,
   librarySchema,
   sourceSchema,
@@ -170,6 +171,8 @@ export const reviewSchema = z.object({
 });
 export const messageSchema = z.object({
   id,
+  pinnedSource: pinnedSourceSchema.optional(),
+  replyTo: id.optional(),
   citations: z.array(citationSchema).optional(),
   provenance: z.enum(['local', 'source', 'mixed']).optional(),
   courseId: id,

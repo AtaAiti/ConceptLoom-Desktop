@@ -3,6 +3,7 @@ import { Field } from '../../components/ui';
 import type { Workspace } from '../../types/state';
 import type { Source } from '../../types/sources';
 import type { Commit } from '../../hooks/useWorkspace';
+import { SourceTutorButton } from '../tutor/SourceTutorBridge';
 
 export function SourceDialogs({
   state,
@@ -135,6 +136,11 @@ export function SourceDialogs({
               </button>
             </div>
             <p className="prose source-page">{preview.pages[page].text}</p>
+            <SourceTutorButton
+              sourceId={preview.id}
+              pageIndex={page}
+              disabled={!preview.pages[page].text.trim()}
+            />
           </section>
         </Dialog>
       )}

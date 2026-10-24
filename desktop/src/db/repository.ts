@@ -62,6 +62,21 @@ export function validateWorkspace(input: unknown): Workspace {
   for (const review of state.reviews)
     if (!state.cards.some((c) => c.id === review.cardId && c.courseId === review.courseId))
       throw new Error('A review refers to a missing card.');
+  for (const message of state.messages) {
+    if (
+      message.pinnedSource &&
+      message.pinnedSource.workspaceId !==
+        state.courses.find((c) => c.id === message.courseId)?.workspaceId
+    )
+      throw new Error('Pinned source crosses workspace boundaries.');
+    if (
+      message.replyTo &&
+      !state.messages.some(
+        (m) => m.id === message.replyTo && m.courseId === message.courseId && m.role === 'user',
+      )
+    )
+      throw new Error('A tutor reply refers to a missing question.');
+  }
   return state;
 }
 export interface Repository {

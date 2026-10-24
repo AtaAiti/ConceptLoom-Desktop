@@ -1180,3 +1180,19 @@ dialog.modal-backdrop:not([open]) {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
+.pinned-context {
+  padding: 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.handoff-excerpt {
+  max-height: 180px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  margin: 12px 0;
+  padding: 12px;
+  background: var(--raised);
+  border-radius: 6px;
+}

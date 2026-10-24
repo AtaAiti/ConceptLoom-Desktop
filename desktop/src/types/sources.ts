@@ -62,6 +62,8 @@ export const citationSchema = z.object({
   excerpt: z.string().max(2400),
 });
 export type SourceCitation = z.infer<typeof citationSchema>;
+export const pinnedSourceSchema = citationSchema.extend({ workspaceId: id });
+export type PinnedSource = z.infer<typeof pinnedSourceSchema>;
 export const sourceScopeSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('none') }),
   z.object({ kind: z.literal('all') }),

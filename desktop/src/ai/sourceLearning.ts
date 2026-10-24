@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import type { Course, Workspace } from '../types/state';
-import type { SourceChunk, SourceCitation, SourceMode, SourceScope } from '../types/sources';
+import type {
+  PinnedSource,
+  SourceChunk,
+  SourceCitation,
+  SourceMode,
+  SourceScope,
+} from '../types/sources';
 import type { AIProvider } from './providers/ollama';
 import { systemPrompt } from './prompts/system';
 import { tutorContext } from './prompts/tutor';
@@ -8,6 +14,7 @@ import { sourcePolicy, sourceData } from './prompts/sources';
 import {
   chunkSource,
   resolveCitations,
+  resolvePinnedSource,
   selectedSources,
   sourceIndex,
 } from '../features/library/sourceIndex';
@@ -74,8 +81,13 @@ export async function answerFromSources(
   question: string,
   scope: SourceScope,
   mode: SourceMode,
+  pinned?: PinnedSource,
 ): Promise<{ content: string; citations: SourceCitation[] }> {
-  const chunks = await sourceIndex.search(state, scope, question);
+  // A direct reading question uses exactly the reviewed fragment, never a fresh lexical guess.
+  const chunks = pinned
+    ? [resolvePinnedSource(state, pinned)]
+    : await sourceIndex.search(state, scope, question);
+  if (pinned) mode = 'sources-only';
   if (!chunks.length && mode === 'sources-only')
     return {
       content:
@@ -88,17 +100,27 @@ export async function answerFromSources(
         role: 'system',
         content: `${systemPrompt(course)}\n${sourcePolicy(mode)}\nReturn sourceAnswer (supported claims only, empty if none), generalAnswer (empty in sources-only mode), and citationIds. Keep answers short and finish with a retrieval question.`,
       },
-      { role: 'user', content: `Learner context (data): ${tutorContext(state, course)}` },
+      {
+        role: 'user',
+        content: `Learner context (data): ${pinned ? JSON.stringify({ goal: course.goal.slice(0, 1200) }) : tutorContext(state, course)}`,
+      },
       ...state.messages
-        .filter((m) => m.courseId === course.id)
+        .filter(
+          (m) =>
+            m.courseId === course.id &&
+            (!pinned ||
+              (m.pinnedSource?.workspaceId === pinned.workspaceId &&
+                m.pinnedSource.chunkId === pinned.chunkId &&
+                m.pinnedSource.excerpt === pinned.excerpt)),
+        )
         .slice(-6)
         .map((m) => ({ role: m.role, content: m.content.slice(0, 1200) })),
       { role: 'user', content: sourceData(chunks) },
       { role: 'user', content: question },
     ],
     z.object({
-      sourceAnswer: z.string().max(12000),
-      generalAnswer: z.string().max(12000),
+      sourceAnswer: z.string().max(9000),
+      generalAnswer: z.string().max(9000),
       citationIds: z.array(z.string()).max(6),
     }),
   );

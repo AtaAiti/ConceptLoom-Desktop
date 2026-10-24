@@ -5,6 +5,15 @@ learning workflow. Free, MIT licensed and local-first. Use Ollama offline, or co
 ChatGPT, Claude or Gemini through an existing account in an official CLI client.
 Account access, available models and usage limits depend on the selected service.
 
+## New in 0.3.2
+
+Source pages, previews and citation excerpts now offer “Разобрать с репетитором”.
+The tutor opens with the reviewed fragment and a draft question; sending is an
+explicit action. Long pages require a fragment choice. Failed contextual requests
+can be retried after reopening without duplicating the question; changed/deleted
+sources are blocked. Return to the original source page from the context panel.
+See [P1 scope, data and verification](../docs/p1-source-tutor.md).
+
 ## New in 0.3.1
 
 Audit fixes cover revocable account consent, settings merges, delayed lesson
@@ -117,7 +126,7 @@ npm run package  # native Windows NSIS installer
 ```
 
 For an initial debug installer use `npx tauri build --debug`. It is written to
-`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.3.0_x64-setup.exe`.
+`src-tauri/target/debug/bundle/nsis/ConceptLoom_0.3.2_x64-setup.exe`.
 The default release package is written under `src-tauri/target/release/bundle/nsis`.
 Installers are unsigned local development builds.
 

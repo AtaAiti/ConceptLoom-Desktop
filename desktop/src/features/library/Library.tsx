@@ -8,18 +8,21 @@ import type { Course, Workspace } from '../../types/state';
 import type { Source, SourcePage } from '../../types/sources';
 import { materialText, materialTitle, readMaterialPages, MAX_TEXT_CHARACTERS } from './materials';
 import { sourceIndex, type SourceIndexService } from './sourceIndex';
+import { SourceTutorButton } from '../tutor/SourceTutorBridge';
 
 export function Library({
   state,
   commit,
   run,
   initialSourceId,
+  initialPage = 0,
 }: {
   state: Workspace;
   course?: Course;
   commit: Commit;
   run: (task: () => Promise<void>) => void;
   initialSourceId?: string;
+  initialPage?: number;
 }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -36,7 +39,7 @@ export function Library({
   const [preview, setPreview] = useState<Source | null>(
     state.sources.find((s) => s.id === initialSourceId) ?? null,
   );
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(initialPage);
   const [removing, setRemoving] = useState<Source | null>(null);
   const [limit, setLimit] = useState(30);
   const sources = state.sources.filter(
@@ -357,6 +360,11 @@ export function Library({
                   : 'Добавьте теги и прикрепите материал к учебному направлению.'}
               </p>
               <div className="button-row">
+                <SourceTutorButton
+                  sourceId={selected.id}
+                  pageIndex={Math.min(page, selected.pages.length - 1)}
+                  disabled={!selectedPage?.text.trim()}
+                />
                 <button className="secondary" onClick={() => setPreview(selected)}>
                   Открыть фрагмент
                 </button>
