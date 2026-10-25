@@ -168,6 +168,42 @@ mod tests {
         p
     }
     #[test]
+    fn comparison_pair_and_bookmark_reopen_and_a_failed_pair_rolls_back() {
+        let path = std::env::temp_dir().join(format!(
+            "conceptloom-comparison-{}-{}.sqlite3",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let mut db = crate::database::open(&path).unwrap();
+        let mut p = patch();
+        p["upserts"]["courses"] = json!([{"id":"c","workspaceId":"my-learning"}]);
+        let question = json!({"id":"comparison-q","courseId":"c","role":"user","content":"Compare atomicity and isolation"});
+        let mut answer = json!({"id":"comparison-a","courseId":"c","role":"assistant","replyTo":"comparison-q","provenance":"source","content":"Definition\nAtomicity: all or nothing [1]\nIsolation: no matching evidence\nApplication question (ungraded)","citations":[{"sourceId":"s","chunkId":"s:0","title":"Lecture","page":7,"excerpt":"Atomicity is all or nothing"}]});
+        p["upserts"]["messages"] = json!([question, answer]);
+        apply(&mut db, &p).unwrap();
+        answer["savedAt"] = json!("2026-10-25T10:00:00.000Z");
+        let mut bookmark = patch();
+        bookmark["upserts"]["messages"] = json!([answer]);
+        apply(&mut db, &bookmark).unwrap();
+        drop(db);
+        let mut reopened = crate::database::open(&path).unwrap();
+        let loaded = crate::database::load(&reopened).unwrap().unwrap();
+        assert_eq!(loaded["messages"].as_array().unwrap().len(), 2);
+        assert!(loaded["messages"].as_array().unwrap().contains(&answer));
+        let mut failed = patch();
+        failed["upserts"]["messages"] = json!([{"id":"second-q","courseId":"c","role":"user","content":"Second comparison"},{"id":"second-a","courseId":"deleted-course","role":"assistant","content":"Must roll back"}]);
+        assert!(apply(&mut reopened, &failed).is_err());
+        assert_eq!(
+            crate::database::load(&reopened).unwrap().unwrap()["messages"],
+            loaded["messages"]
+        );
+        drop(reopened);
+        std::fs::remove_file(path).unwrap();
+    }
+    #[test]
     fn source_guide_roundtrips_without_rebuilding_the_text_index() {
         let path = std::env::temp_dir().join(format!(
             "conceptloom-guide-{}-{}.sqlite3",

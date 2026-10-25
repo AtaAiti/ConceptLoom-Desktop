@@ -449,6 +449,7 @@ export default function App() {
                 setPage('Knowledge Map');
               }}
               clearTopic={() => setTopicId('')}
+              openSources={() => setPage('Library')}
               setWorking={(busy) => setTutorBusy((requests) => ({ ...requests, [tutorKey]: busy }))}
               readSource={() => {
                 const pinned = tutorDraft.pinned;

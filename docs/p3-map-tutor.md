@@ -1,6 +1,6 @@
 # P3: вопрос о выбранном понятии карты
 
-Desktop 0.3.4. Третий срез из [продуктового плана](notebooklm-product-review.md), поверх [P1](p1-source-tutor.md) и [P2](p2-saved-explanations.md). Затем добавлены [P4: две карточки из фрагмента](p4-source-flashcards.md) в 0.3.5 и [P5: обзор раздела](p5-source-guide.md) в 0.3.6. Следующая сессия — P6.
+Desktop 0.3.4. Третий срез из [продуктового плана](notebooklm-product-review.md), поверх [P1](p1-source-tutor.md) и [P2](p2-saved-explanations.md). Затем добавлены [P4: две карточки из фрагмента](p4-source-flashcards.md) в 0.3.5 и [P5: обзор раздела](p5-source-guide.md) в 0.3.6. В 0.3.7 реализован [P6: сравнение понятий](p6-source-comparison.md); все шесть MVP-срезов завершены.
 
 ## Что получает пользователь
 

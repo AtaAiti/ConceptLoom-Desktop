@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Send, Sparkles } from 'lucide-react';
 import { Empty, PageHeading, Panel, errorMessage } from '../../components/ui';
 import { systemPrompt } from '../../ai/prompts/system';
@@ -12,6 +12,7 @@ import { resolvePinnedSource, selectedSources } from '../library/sourceIndex';
 import type { TutorDraft } from './draft';
 import { SaveExplanationButton } from './SaveExplanationButton';
 import { mapSourceChunks, mapTutorInstruction, resolveTutorTopic } from './mapContext';
+import { SourceComparisonDialog } from './SourceComparisonDialog';
 
 export function Tutor({
   state,
@@ -27,6 +28,7 @@ export function Tutor({
   clearTopic,
   working,
   setWorking,
+  openSources,
 }: {
   state: Workspace;
   course?: Course;
@@ -41,9 +43,12 @@ export function Tutor({
   clearTopic: () => void;
   working: boolean;
   setWorking: (value: boolean) => void;
+  openSources: () => void;
 }) {
   const inFlight = useRef(false);
   const [requestError, setRequestError] = useState('');
+  const [comparisonOpen, setComparisonOpen] = useState(false);
+  useEffect(() => setComparisonOpen(false), [draft.id]);
   const pinnedError = useMemo(() => {
     if (!draft.pinned) return '';
     try {
@@ -196,7 +201,24 @@ export function Tutor({
         eyebrow="ВАШ ИИ / РЕПЕТИТОР"
         title={currentTopic?.title ?? 'Репетитор'}
         description="Репетитор · одна связь за раз · объяснение с опорой на ваши материалы"
+        action={
+          <button className="secondary" disabled={working} onClick={() => setComparisonOpen(true)}>
+            Сравнить понятия
+          </button>
+        }
       />
+      {comparisonOpen && (
+        <SourceComparisonDialog
+          state={state}
+          course={course}
+          topicId={draft.topicId}
+          pinnedSourceId={draft.pinned?.sourceId}
+          provider={provider}
+          commit={commit}
+          onClose={() => setComparisonOpen(false)}
+          openSources={openSources}
+        />
+      )}
       {mapContext && (
         <section className="pinned-context" aria-label="Понятие с карты">
           <div className="section-line">
