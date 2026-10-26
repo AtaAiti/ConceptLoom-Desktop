@@ -14,14 +14,11 @@ explicit consent. See [account setup and privacy](../docs/account-providers.md).
 
 [Repository overview](../README.md) · [Русское руководство](../docs/ru/README.md)
 
-## Version and branch status
+## Version
 
-Checked **27 October 2026** against `package.json`, the Tauri/Cargo version and the
-implemented source code. This guide covers the **0.3.7 development line**.
-GitHub's default `main` still contains Desktop **0.1.1**. The complete implemented
-version is on [`codex/p6-source-comparison`](https://github.com/AtaAiti/ConceptLoom-Desktop/tree/codex/p6-source-comparison),
-with [PR #10](https://github.com/AtaAiti/ConceptLoom-Desktop/pull/10) stacked on the
-preceding feature PRs. These features have not yet been merged into `main`.
+This guide covers **Desktop 0.3.7 on `main`**, including all six P1–P6 MVP slices.
+The version agrees with `package.json` and the Tauri/Cargo manifests. Historical
+implementation notes document each milestone's scope and verification.
 
 The original MCP package has its own **1.1.0** version and Node.js 20+ workflow.
 Its adapters and Markdown notebooks are independent of the desktop SQLite data.
@@ -84,14 +81,14 @@ also uses Node.js 22. See the [Tauri Windows prerequisite guide](https://v2.taur
 For a fresh checkout of the current implemented version:
 
 ```powershell
-git clone --branch codex/p6-source-comparison https://github.com/AtaAiti/ConceptLoom-Desktop.git
+git clone https://github.com/AtaAiti/ConceptLoom-Desktop.git
 cd ConceptLoom-Desktop/desktop
 npm ci
 npm run desktop
 ```
 
-In an existing checkout, first select the intended branch; the older `main` does
-not contain P1–P6. The commands below assume your working directory is `desktop`.
+In an existing checkout, update `main` before installing dependencies. The
+commands below assume your working directory is `desktop`.
 
 For local inference, install Ollama separately, then download and check the model:
 

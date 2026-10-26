@@ -15,12 +15,9 @@ Claude либо Gemini через официальный клиент и сущ�
 который принимает соответствующий сервис. Подписка не гарантирует доступ ко всем
 моделям. [Подключение и конфиденциальность](../account-providers.md).
 
-**Состояние веток проверено 27 октября 2026:** здесь описана реализованная линия
-разработки **0.3.7**. На GitHub по умолчанию открывается `main` с Desktop **0.1.1**.
-Полный код P1–P6 находится в
-[`codex/p6-source-comparison`](https://github.com/AtaAiti/ConceptLoom-Desktop/tree/codex/p6-source-comparison);
-[PR №10](https://github.com/AtaAiti/ConceptLoom-Desktop/pull/10) опирается на
-предыдущие PR. Новые функции ещё не включены в `main`.
+**Текущая версия исходников — Desktop 0.3.7 в `main`.** Основная ветка содержит
+все шесть MVP P1–P6 и актуальную документацию. Независимый MCP-пакет сохраняет
+версию 1.1.0. [История реализации и проверок](../notebooklm-product-review.md).
 
 ### Реализованные сценарии
 
@@ -46,7 +43,7 @@ Claude либо Gemini через официальный клиент и сущ�
 [desktop-руководстве](../../desktop/README.md#windows-requirements).
 
 ```powershell
-git clone --branch codex/p6-source-comparison https://github.com/AtaAiti/ConceptLoom-Desktop.git
+git clone https://github.com/AtaAiti/ConceptLoom-Desktop.git
 cd ConceptLoom-Desktop/desktop
 npm ci
 npm run desktop

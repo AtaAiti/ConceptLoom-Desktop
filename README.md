@@ -18,12 +18,10 @@ connections for ChatGPT, Claude or Gemini. Account connections require internet,
 explicit consent and access accepted by the relevant official client. An account
 or subscription does not guarantee every model. See [AI setup and privacy](docs/account-providers.md).
 
-**Branch status checked 27 October 2026:** this documentation describes the
-implemented **0.3.7 development line**. GitHub's default `main` still contains
-Desktop **0.1.1**. The complete P1–P6 code is on
-[`codex/p6-source-comparison`](https://github.com/AtaAiti/ConceptLoom-Desktop/tree/codex/p6-source-comparison),
-with [PR #10](https://github.com/AtaAiti/ConceptLoom-Desktop/pull/10) stacked on the
-preceding feature PRs. These features are not yet merged into `main`.
+**Current source version: Desktop 0.3.7.** Use the default `main` branch for the
+complete P1–P6 implementation and this documentation. The independent original
+MCP package remains version 1.1.0. See the [implementation history](docs/notebooklm-product-review.md)
+for the delivered milestones and their verification.
 
 ### What you can do
 
@@ -53,10 +51,10 @@ See [P1–P6 scope and implementation notes](docs/notebooklm-product-review.md).
 ### Start the current desktop development version
 
 Install the [Windows build prerequisites](desktop/README.md#windows-requirements),
-then use the implemented feature branch rather than the older default branch:
+then clone the default branch:
 
 ```powershell
-git clone --branch codex/p6-source-comparison https://github.com/AtaAiti/ConceptLoom-Desktop.git
+git clone https://github.com/AtaAiti/ConceptLoom-Desktop.git
 cd ConceptLoom-Desktop/desktop
 npm ci
 npm run desktop
