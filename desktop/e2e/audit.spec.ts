@@ -158,6 +158,17 @@ test('incomplete legacy lesson can be repaired without discarding prior evidence
   await expect(page.getByText('Нашли точку старта.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Обновить задания' }).click();
   await expect(page.getByRole('button', { name: 'Обновить задания' })).not.toBeVisible();
+  // The repair button disappears while generation is still in progress.
+  // Wait for the durable replacement before inspecting the preserved evidence.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const saved = JSON.parse(localStorage.getItem('conceptloom-desktop-preview-v1')!);
+        return saved.lessons.find((l: { topicId: string }) => l.topicId === 'topic0')?.content
+          .exercises.length;
+      }),
+    )
+    .toBe(4);
   const saved = await page.evaluate(() =>
     JSON.parse(localStorage.getItem('conceptloom-desktop-preview-v1')!),
   );
