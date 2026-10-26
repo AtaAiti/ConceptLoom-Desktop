@@ -20,9 +20,9 @@ describe('local-only AI boundary', () => {
     expect(
       parseResponse('{"accurate":true,"feedback":"Correct connection"}', verdictSchema).accurate,
     ).toBe(true);
-    expect(() => parseResponse('```json {} ```', mapSchema)).toThrow(/invalid response/);
+    expect(() => parseResponse('```json {} ```', mapSchema)).toThrow(/неверный ответ/);
     expect(() => parseResponse('{"concept":"Incomplete"}', lessonContentSchema)).toThrow(
-      /invalid response/,
+      /неверный ответ/,
     );
   });
   it('reports offline and missing models without exposing transport errors', async () => {

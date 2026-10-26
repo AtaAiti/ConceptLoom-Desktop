@@ -7,6 +7,22 @@ export const phases = [
   { name: 'Build', detail: 'Learn one connection. Retrieve it. Apply it.' },
 ] as const;
 
+export function topicDepths(topics: Topic[]): Map<string, number> {
+  validateMap(topics);
+  const byId = new Map(topics.map((topic) => [topic.id, topic]));
+  const depths = new Map<string, number>();
+  function depth(id: string): number {
+    const cached = depths.get(id);
+    if (cached !== undefined) return cached;
+    const topic = byId.get(id)!;
+    const value = topic.dependsOn.length ? 1 + Math.max(...topic.dependsOn.map(depth)) : 0;
+    depths.set(id, value);
+    return value;
+  }
+  topics.forEach((topic) => depth(topic.id));
+  return depths;
+}
+
 export function validateMap(topics: Topic[]): void {
   const byId = new Map(topics.map((t) => [t.id, t]));
   if (byId.size !== topics.length) throw new Error('Every concept needs a unique ID.');

@@ -58,7 +58,7 @@ export function Statistics({ state, weakOnly = false }: { state: Workspace; weak
               Each square is a day. Brighter squares reflect more practice and review attempts.
             </p>
           </Panel>
-          <Panel title="Concept evidence">
+          <Panel title="Подтверждённые понятия">
             {state.topics.map((topic) => {
               const score = topicMastery(state, topic.id);
               return (

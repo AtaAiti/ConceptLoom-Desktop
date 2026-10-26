@@ -45,7 +45,8 @@ export function composeCheckpoint(input, random = Math.random) {
       prompt,
       format,
       escapeChoice: { key: "__gap__", label: "I do not know yet" },
-      instructions: "Answer without answer choices, or respond with __gap__. Optionally report confidence from 0 to 100.",
+      instructions:
+        "Answer without answer choices, or respond with __gap__. Optionally report confidence from 0 to 100.",
     };
   }
 
@@ -92,18 +93,15 @@ export function composeCheckpoint(input, random = Math.random) {
     multiple,
     choices: arranged,
     escapeChoice: { key: "__gap__", label: "I do not know yet" },
-    instructions: multiple
-      ? "Select every fitting key, or choose __gap__."
-      : "Select one key, or choose __gap__.",
+    instructions: multiple ? "Select every fitting key, or choose __gap__." : "Select one key, or choose __gap__.",
   };
 }
 
-export function assessCheckpoint(input) {
+export function assessCheckpoint(input, consume = true) {
   discardExpired();
   const token = cleanText(input.token, "token");
   const card = activeCards.get(token);
   if (!card) throw new Error("checkpoint token is unknown or expired");
-  activeCards.delete(token);
 
   const confidence = input.confidence === undefined ? undefined : Number(input.confidence);
   if (confidence !== undefined && (!Number.isInteger(confidence) || confidence < 0 || confidence > 100)) {
@@ -118,6 +116,7 @@ export function assessCheckpoint(input) {
       throw new Error("verdict must be accurate, needs-repair, or knowledge-gap");
     }
     const accurate = verdict === "accurate";
+    if (consume) activeCards.delete(token);
     return {
       format: card.format,
       outcome: verdict,
@@ -144,9 +143,12 @@ export function assessCheckpoint(input) {
   }
 
   const selectionSet = new Set(selected);
-  const accurate = !admittedGap
-    && selectionSet.size === card.expectedSet.size
-    && [...selectionSet].every((key) => card.expectedSet.has(key));
+  const accurate =
+    !admittedGap &&
+    selectionSet.size === card.expectedSet.size &&
+    [...selectionSet].every((key) => card.expectedSet.has(key));
+
+  if (consume) activeCards.delete(token);
 
   return {
     format: card.format,
@@ -159,6 +161,10 @@ export function assessCheckpoint(input) {
     calibration: describeCalibration(accurate, confidence),
     note: typeof input.note === "string" && input.note.trim() ? input.note.trim() : undefined,
   };
+}
+
+export function consumeCheckpoint(token) {
+  activeCards.delete(token);
 }
 
 function describeCalibration(accurate, confidence) {

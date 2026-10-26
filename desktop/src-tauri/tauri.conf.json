@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "ConceptLoom",
-  "version": "0.1.1",
+  "version": "0.3.7",
   "identifier": "org.conceptloom.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -10,8 +10,29 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "title": "ConceptLoom", "width": 1440, "height": 900, "minWidth": 1000, "minHeight": 700, "backgroundColor": "#101117" }],
-    "security": { "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; script-src 'self'" }
+    "windows": [
+      {
+        "title": "ConceptLoom",
+        "width": 1366,
+        "height": 768,
+        "minWidth": 1000,
+        "minHeight": 700,
+        "backgroundColor": "#17181d",
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; script-src 'self'"
+    }
   },
-  "bundle": { "active": true, "targets": ["nsis"], "icon": ["icons/icon.ico", "icons/icon.png"] }
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon.png"
+    ]
+  }
 }

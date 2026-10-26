@@ -3,9 +3,11 @@ import { ArrowRight, CheckCircle2, Sparkles } from 'lucide-react';
 import { PageHeading, Panel, Empty, Progress } from '../../components/ui';
 import { gradeExact, publicExercise, topicStatus, prepareLesson } from '../../learning/conceptloom';
 import { masteryLabel, topicMastery } from '../../learning/mastery';
-import { lessonContentSchema, verdictSchema } from '../../ai/schemas';
+import { generatedLessonSchema, verdictSchema } from '../../ai/schemas';
 import { systemPrompt } from '../../ai/prompts/system';
 import { lessonPrompt } from '../../ai/prompts/lesson';
+import { generateGrounded } from '../../ai/sourceLearning';
+import { SourceContext, Citations } from '../library/SourceContext';
 import { quizPrompt } from '../../ai/prompts/quiz';
 import { newCard } from '../../learning/reviews';
 import type { AIProvider } from '../../ai/providers/ollama';
@@ -48,18 +50,19 @@ export function LessonScreen({
   if (!course || !topic)
     return (
       <Empty
-        title="Find your next connection"
-        description="Choose an available concept on the Knowledge Map to begin."
+        title="Найдите следующую связь"
+        description="Выберите доступное понятие на карте знаний."
       />
     );
   if (topicStatus(state, topic) === 'locked')
     return (
       <Empty
-        title="Start with the prerequisites"
-        description="Build evidence for the preceding connections before opening this concept."
+        title="Начните с предпосылок"
+        description="Подтвердите понимание предыдущих связей, чтобы открыть это понятие."
       />
     );
   const lesson = state.lessons.find((l) => l.topicId === topic.id);
+  const needsRepair = lesson && !generatedLessonSchema.safeParse(lesson.content).success;
   const located = state.attempts.some((a) => a.topicId === topic.id);
   const score = topicMastery(state, topic.id);
   const next = state.topics.find(
@@ -86,7 +89,7 @@ export function LessonScreen({
             courseId: course.id,
             topicId: topic.id,
             phase: 'build',
-            nextStep: `Assess ${question.id}: ${answer}`,
+            nextStep: `Assess ${question.id}`,
             exerciseId: question.id,
             pendingResponse: answer,
             updatedAt: new Date().toISOString(),
@@ -155,18 +158,24 @@ export function LessonScreen({
       <PageHeading
         eyebrow={`${located ? 'BUILD' : 'LOCATE'} / ${course.name.toUpperCase()}`}
         title={topic.title}
-        description="One connection. A clear explanation. Evidence of understanding."
+        description="Одна связь. Понятное объяснение. Проверка понимания."
         action={
           <span className="status-pill">
             {masteryLabel(score)} · {score}%
           </span>
         }
       />
-      {!lesson ? (
+      {!lesson && <SourceContext state={state} course={course} commit={commit} run={run} />}
+      {lesson && <Citations citations={lesson.citations} />}
+      {(!lesson || needsRepair) && (
         <Panel>
           <Empty
-            title="Turn this concept into a connection"
-            description="Your local model will create a compact lesson and checkpoints. Reading it will not change mastery."
+            title={needsRepair ? 'В занятии не хватает видов практики' : 'Разберём это понятие'}
+            description={
+              needsRepair
+                ? 'Обновите задания, чтобы проверить все четыре вида понимания. Накопленные результаты и карточки сохранятся.'
+                : 'Выбранная модель ИИ подготовит объяснение и задания. Прогресс меняют ваши ответы.'
+            }
           >
             <button
               className="primary"
@@ -175,34 +184,50 @@ export function LessonScreen({
                 run(async () => {
                   setWorking(true);
                   try {
-                    const generated = await provider.structured(
-                      [
-                        { role: 'system', content: systemPrompt(course) },
-                        { role: 'user', content: lessonPrompt(topic, state) },
-                      ],
-                      lessonContentSchema,
+                    const { result: generated, citations } = await generateGrounded(
+                      provider,
+                      state,
+                      course,
+                      `${topic.title} ${topic.description}`,
+                      lessonPrompt(topic, state),
+                      generatedLessonSchema,
                     );
                     const content = prepareLesson(generated);
+                    if (lesson)
+                      content.exercises = content.exercises.map((e) => ({
+                        ...e,
+                        id: crypto.randomUUID(),
+                      }));
                     const now = new Date().toISOString();
                     await commit((s) => {
-                      if (s.lessons.some((l) => l.topicId === topic.id)) return s;
+                      const existing = s.lessons.find((l) => l.topicId === topic.id);
+                      if (existing && (!needsRepair || existing.id !== lesson?.id)) return s;
                       return {
                         ...s,
                         lessons: [
-                          ...s.lessons,
+                          ...s.lessons.filter((l) => l.topicId !== topic.id),
                           {
                             id: crypto.randomUUID(),
                             courseId: course.id,
                             topicId: topic.id,
                             content,
+                            citations,
                             createdAt: now,
                           },
                         ],
                         cards: [
                           ...s.cards,
-                          ...content.flashcards.map((c) =>
-                            newCard(course.id, topic.id, c.front, c.back),
-                          ),
+                          ...(lesson
+                            ? []
+                            : content.flashcards.map((c) => ({
+                                ...newCard(course.id, topic.id, c.front, c.back),
+                                citations,
+                                createdBy: 'ai' as const,
+                                blocks: [
+                                  { type: 'text' as const, text: c.back },
+                                  { type: 'example' as const, text: content.examples[0] },
+                                ],
+                              }))),
                         ],
                         sessions: [
                           ...s.sessions.filter((v) => v.id !== topic.id),
@@ -217,6 +242,9 @@ export function LessonScreen({
                         ],
                       };
                     });
+                    setIndex(0);
+                    setResponse('');
+                    setFeedback(null);
                     started.current = Date.now();
                   } finally {
                     setWorking(false);
@@ -225,15 +253,20 @@ export function LessonScreen({
               }
             >
               <Sparkles size={16} />
-              {working ? 'Building your lesson…' : 'Create local lesson'}
+              {working
+                ? 'Готовим занятие…'
+                : needsRepair
+                  ? 'Обновить задания'
+                  : 'Подготовить занятие'}
             </button>
           </Empty>
         </Panel>
-      ) : (
+      )}
+      {lesson && (
         <div className="lesson-layout">
           <div>
             {!located && (
-              <Panel title="Locate your knowledge frontier">
+              <Panel title="Найдите границу знаний">
                 <p className="muted">
                   Try the first checkpoint before reading the explanation. You can choose “I don’t
                   know yet”. We use that response to find where to begin.
@@ -242,14 +275,14 @@ export function LessonScreen({
             )}
             {located && (
               <>
-                <Panel title="The concept" subtitle="01 / UNDERSTAND">
+                <Panel title="Понятие" subtitle="01 / UNDERSTAND">
                   <h2 className="concept-title">{lesson.content.concept}</h2>
                   <p className="prose">{lesson.content.explanation}</p>
                 </Panel>
-                <Panel title="Connection to what came before" subtitle="02 / CONNECT">
+                <Panel title="Связь с предыдущими знаниями" subtitle="02 / CONNECT">
                   <p className="prose connection-copy">{lesson.content.connection}</p>
                 </Panel>
-                <Panel title="See it in action" subtitle="03 / EXAMPLES">
+                <Panel title="Примеры применения" subtitle="03 / EXAMPLES">
                   <div className="examples">
                     {lesson.content.examples.map((example, i) => (
                       <div key={i}>
@@ -262,7 +295,7 @@ export function LessonScreen({
               </>
             )}
             <Panel
-              title="Practice & mini quiz"
+              title="Проверка знаний"
               subtitle={`04 / ${exercise?.dimension.toUpperCase() ?? 'RETRIEVE'}`}
             >
               <div className="exercise-tabs">
@@ -312,9 +345,10 @@ export function LessonScreen({
                           placeholder={
                             question.type === 'build-sentence'
                               ? 'Arrange the words and write your sentence…'
-                              : 'Retrieve it in your own words…'
+                              : 'Объясните своими словами…'
                           }
                           value={response}
+                          maxLength={20000}
                           disabled={working || !!feedback}
                           onChange={(e) => setResponse(e.target.value)}
                         />
@@ -338,14 +372,14 @@ export function LessonScreen({
                               disabled={working || !response.trim()}
                               onClick={() => run(() => assess(exercise))}
                             >
-                              {working ? 'Checking & saving…' : 'Check understanding'}
+                              {working ? 'Проверяем и сохраняем…' : 'Проверить понимание'}
                             </button>
                             <button
                               className="text-button"
                               disabled={working}
                               onClick={() => run(() => assess(exercise, true))}
                             >
-                              I don’t know yet
+                              Пока не знаю
                             </button>
                           </div>
                         </>
@@ -354,10 +388,10 @@ export function LessonScreen({
                         <div className={`feedback ${feedback.accurate ? 'accurate' : 'repair'}`}>
                           <strong>
                             {feedback.accurate
-                              ? 'Connection demonstrated.'
+                              ? 'Понимание подтверждено.'
                               : feedback.gap
-                                ? 'We found your frontier.'
-                                : 'Let’s repair this connection.'}
+                                ? 'Нашли точку старта.'
+                                : 'Разберём эту связь ещё раз.'}
                           </strong>
                           <p className="prose">{feedback.feedback}</p>
                           {!feedback.accurate && confidence >= 75 && (
@@ -376,7 +410,7 @@ export function LessonScreen({
                               started.current = Date.now();
                             }}
                           >
-                            {feedback.accurate ? 'Next checkpoint' : 'Try again'}
+                            {feedback.accurate ? 'Следующее задание' : 'Попробовать ещё'}
                             <ArrowRight size={14} />
                           </button>
                         </div>
@@ -386,13 +420,13 @@ export function LessonScreen({
                 })()}
             </Panel>
             {located && (
-              <Panel title="Take this with you" subtitle="05 / SUMMARY">
+              <Panel title="Главное" subtitle="05 / SUMMARY">
                 <p className="prose">{lesson.content.summary}</p>
               </Panel>
             )}
           </div>
           <aside>
-            <Panel title="Your evidence">
+            <Panel title="Ваши результаты">
               <strong className="big-number">{score}%</strong>
               <Progress value={score} />
               <p className="muted">
@@ -411,7 +445,7 @@ export function LessonScreen({
                 </div>
               ))}
             </Panel>
-            <Panel title="Flashcards created">
+            <Panel title="Карточки для повторения">
               <p className="muted">Retrieve before revealing the answer in Reviews.</p>
               {state.cards
                 .filter((c) => c.topicId === topic.id)
@@ -421,7 +455,7 @@ export function LessonScreen({
                   </div>
                 ))}
             </Panel>
-            <Panel title="Mistakes to learn from">
+            <Panel title="Ошибки для разбора">
               {state.attempts
                 .filter((a) => a.topicId === topic.id && !a.accurate)
                 .slice(-3)
@@ -431,7 +465,7 @@ export function LessonScreen({
                   </p>
                 ))}
               {!state.attempts.some((a) => a.topicId === topic.id && !a.accurate) && (
-                <p className="muted">No recorded mistakes yet.</p>
+                <p className="muted">Пока нет записанных ошибок.</p>
               )}
             </Panel>
             {next && (

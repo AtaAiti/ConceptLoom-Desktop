@@ -40,6 +40,8 @@ learning-notes*.md
 materials/
 books/
 courses/
+!desktop/src/features/courses/
+!desktop/src/features/courses/*.tsx
 *.pdf
 *.epub
 *.mobi

@@ -12,7 +12,7 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
   const [status, setStatus] = useState('');
   const [working, setWorking] = useState(false);
   const [model, setModel] = useState(state.settings.model);
-  const [choice, setChoice] = useState('English');
+  const [choice, setChoice] = useState('Custom');
   const next = () => setStep((s) => s + 1);
   return (
     <main className="onboarding">
@@ -38,7 +38,7 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
             <p>
               Welcome to ConceptLoom Desktop.
               <br />
-              Your private local AI learning environment.
+              Your learning environment with a choice of AI providers.
             </p>
             <div className="welcome-features">
               <span>
@@ -47,11 +47,11 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
               </span>
               <span>
                 <Cpu />
-                Learn with local AI
+                Learn with your chosen AI
               </span>
               <span>
                 <ShieldCheck />
-                Your data stays on your computer
+                Progress saved on your computer
               </span>
             </div>
             <button className="primary" onClick={next}>
@@ -101,7 +101,8 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
               Continue <ArrowRight size={16} />
             </button>
             <p className="muted small">
-              You can organize courses offline and connect your tutor later.
+              You can continue without Ollama. Connect ChatGPT, Claude or Gemini through your
+              account in Settings after setup.
             </p>
           </>
         )}
@@ -152,9 +153,9 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
           <>
             <div className="eyebrow">04 / FIRST COURSE</div>
             <h1>What opens your next door?</h1>
-            <p>Start with a language, or bring a subject of your own.</p>
+            <p>Study any subject with your own materials. Languages are one option.</p>
             <div className="course-choices">
-              {['English', 'Korean', 'Custom'].map((n) => (
+              {['Custom', 'English', 'Korean'].map((n) => (
                 <button
                   key={n}
                   className={choice === n ? 'chosen' : ''}
@@ -168,6 +169,18 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
             <button className="primary" onClick={next}>
               Set your learning goal <ArrowRight size={16} />
             </button>
+            <button
+              className="secondary"
+              onClick={() => {
+                void commit((s) => ({
+                  ...s,
+                  settings: { ...s.settings, onboardingComplete: true },
+                })).catch((e) => setStatus(errorMessage(e)));
+              }}
+            >
+              Start with an empty workspace
+            </button>
+            {status && <p role="status">{status}</p>}
           </>
         )}
         {step === 4 && (
@@ -220,7 +233,9 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
           </button>
         )}
       </div>
-      <p className="onboarding-foot">No account. No subscription. Just you and what comes next.</p>
+      <p className="onboarding-foot">
+        Ollama works offline. Account providers are optional and available in Settings.
+      </p>
     </main>
   );
 }

@@ -1,11 +1,15 @@
 import { courseSchema, type Course, type Topic, type Workspace } from '../types/state';
+import type { z } from 'zod';
 import { validateMap } from './conceptloom';
 
-export function createCourse(input: Omit<Course, 'id' | 'createdAt'>): Course {
+export function createCourse(
+  input: Omit<z.input<typeof courseSchema>, 'id' | 'createdAt'>,
+): Course {
   return courseSchema.parse({
     ...input,
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   });
 }
 export function initialTopics(course: Course): Topic[] {
@@ -50,6 +54,10 @@ export function initialTopics(course: Course): Topic[] {
 export function deleteCourse(state: Workspace, courseId: string): Workspace {
   return {
     ...state,
+    sources: state.sources.map((s) => ({
+      ...s,
+      courseIds: s.courseIds.filter((id) => id !== courseId),
+    })),
     courses: state.courses.filter((c) => c.id !== courseId),
     topics: state.topics.filter((t) => t.courseId !== courseId),
     lessons: state.lessons.filter((t) => t.courseId !== courseId),

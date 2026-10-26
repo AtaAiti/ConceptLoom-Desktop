@@ -1,5 +1,7 @@
 # Desktop initial milestone verification
 
+Historical milestone. For current results and remaining limits, see [production audit](production-audit.md).
+
 Verified on Windows against the original ConceptLoom commit `6cc52df`.
 
 - All 18 original MCP tests and syntax checks pass without source modifications.

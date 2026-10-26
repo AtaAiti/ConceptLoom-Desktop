@@ -1,4 +1,7 @@
+mod accounts;
+mod changes;
 mod database;
+mod source_index;
 use serde_json::Value;
 use std::{path::PathBuf, sync::Mutex, time::Duration};
 use tauri::{Manager, State};
@@ -12,20 +15,102 @@ fn db_error(error: impl std::fmt::Display) -> String {
     "Your data could not be read or saved. Check available disk space and restart the app. No progress was advanced.".into()
 }
 #[tauri::command]
-fn load_workspace(storage: State<Storage>) -> Result<Option<Value>, String> {
+async fn load_workspace(storage: State<'_, Storage>) -> Result<Option<Value>, String> {
     let db = storage.connection.lock().map_err(db_error)?;
     let db = db.as_ref().map_err(Clone::clone)?;
     database::load(db).map_err(db_error)
 }
 #[tauri::command]
-fn save_workspace(storage: State<Storage>, state: Value) -> Result<(), String> {
+async fn apply_changes(storage: State<'_, Storage>, patch: Value) -> Result<(), String> {
     let mut db = storage.connection.lock().map_err(db_error)?;
     let db = db.as_mut().map_err(|error| error.clone())?;
-    database::save(db, &state).map_err(db_error)
+    changes::apply(db, &patch).map_err(db_error)
+}
+#[tauri::command]
+async fn search_sources(
+    storage: State<'_, Storage>,
+    workspace_id: String,
+    source_ids: Vec<String>,
+    query: String,
+) -> Result<Value, String> {
+    let db = storage.connection.lock().map_err(db_error)?;
+    source_index::search(
+        db.as_ref().map_err(Clone::clone)?,
+        &workspace_id,
+        &source_ids,
+        &query,
+    )
+    .map_err(db_error)
 }
 #[tauri::command]
 fn data_location(storage: State<Storage>) -> String {
     storage.path.to_string_lossy().into_owned()
+}
+
+#[tauri::command]
+async fn account_status(
+    storage: State<'_, Storage>,
+    provider: accounts::Provider,
+) -> Result<accounts::AccountStatus, String> {
+    accounts::status(
+        storage.path.parent().ok_or("Папка приложения недоступна")?,
+        provider,
+    )
+    .await
+}
+#[tauri::command]
+async fn account_setup(
+    storage: State<'_, Storage>,
+    provider: accounts::Provider,
+    action: String,
+) -> Result<String, String> {
+    accounts::setup(
+        storage.path.parent().ok_or("Папка приложения недоступна")?,
+        provider,
+        &action,
+    )
+    .await
+}
+#[tauri::command]
+async fn account_test(
+    storage: State<'_, Storage>,
+    provider: accounts::Provider,
+    model: String,
+) -> Result<String, String> {
+    accounts::test(
+        storage.path.parent().ok_or("Папка приложения недоступна")?,
+        provider,
+        &model,
+    )
+    .await
+}
+#[tauri::command]
+async fn account_generate(
+    storage: State<'_, Storage>,
+    provider: accounts::Provider,
+    model: String,
+    messages: Vec<accounts::Message>,
+    schema: Option<Value>,
+    json_mode: bool,
+) -> Result<String, String> {
+    {
+        let connection = storage.connection.lock().map_err(db_error)?;
+        let db = connection.as_ref().map_err(Clone::clone)?;
+        let payload: String = db
+            .query_row("SELECT payload FROM settings WHERE id=1", [], |r| r.get(0))
+            .map_err(db_error)?;
+        let settings: Value = serde_json::from_str(&payload).map_err(db_error)?;
+        accounts::authorize(&settings, provider, &model)?;
+    }
+    accounts::generate(
+        storage.path.parent().ok_or("Папка приложения недоступна")?,
+        provider,
+        &model,
+        messages,
+        schema,
+        json_mode,
+    )
+    .await
 }
 
 fn validate_endpoint(endpoint: &str) -> Result<reqwest::Url, String> {
@@ -105,9 +190,14 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             load_workspace,
-            save_workspace,
+            apply_changes,
+            search_sources,
             data_location,
-            ollama_request
+            ollama_request,
+            account_status,
+            account_setup,
+            account_test,
+            account_generate
         ])
         .run(tauri::generate_context!())
         .expect("Unable to start ConceptLoom");

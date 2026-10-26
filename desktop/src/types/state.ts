@@ -1,4 +1,13 @@
 import { z } from 'zod';
+import {
+  citationSchema,
+  pinnedSourceSchema,
+  defaultWorkspace,
+  librarySchema,
+  sourceSchema,
+  sourceScopeSchema,
+  workspaceInfoSchema,
+} from './sources';
 
 const text = z.string().trim().min(1).max(20000);
 const id = z.string().min(1).max(100);
@@ -7,18 +16,42 @@ export const dimensionSchema = z.enum(['recognition', 'recall', 'application', '
 export type Dimension = z.infer<typeof dimensionSchema>;
 export const courseSchema = z.object({
   id,
+  workspaceId: id.default('my-learning'),
+  subjectKind: z
+    .enum([
+      'general',
+      'language',
+      'programming',
+      'stem',
+      'humanities',
+      'exam',
+      'professional',
+      'custom',
+    ])
+    .default('general'),
+  description: z.string().max(20000).default(''),
+  difficulty: z.enum(['beginner', 'intermediate', 'advanced']).default('beginner'),
+  targetDate: z.string().optional(),
+  updatedAt: date.optional(),
+  domain: z
+    .object({ targetLanguage: z.string().optional(), subjectLanguage: z.string().optional() })
+    .optional(),
+  sourceScope: sourceScopeSchema.optional(),
+  sourceMode: z.enum(['sources-only', 'mixed']).optional(),
   name: text.max(100),
   goal: text,
   knowledge: z.string().max(20000),
   currentLevel: text.max(100),
   targetLevel: text.max(100),
   explanationLanguage: text.max(100),
-  targetLanguage: text.max(100),
+  targetLanguage: z.string().max(100).default(''),
   createdAt: date,
 });
 export type Course = z.infer<typeof courseSchema>;
 export const topicSchema = z.object({
   id,
+  position: z.object({ x: z.number().finite(), y: z.number().finite() }).optional(),
+  citations: z.array(citationSchema).optional(),
   courseId: id,
   title: text.max(200),
   description: z.string().max(20000),
@@ -80,6 +113,7 @@ export const lessonContentSchema = z
 export type LessonContent = z.infer<typeof lessonContentSchema>;
 export const lessonSchema = z.object({
   id,
+  citations: z.array(citationSchema).optional(),
   courseId: id,
   topicId: id,
   content: lessonContentSchema,
@@ -104,6 +138,13 @@ export const attemptSchema = z.object({
 export type Attempt = z.infer<typeof attemptSchema>;
 export const cardSchema = z.object({
   id,
+  citations: z.array(citationSchema).optional(),
+  blocks: z
+    .array(
+      z.object({ type: z.enum(['text', 'code', 'hint', 'example']), text: z.string().max(20000) }),
+    )
+    .optional(),
+  createdBy: z.enum(['user', 'ai']).optional(),
   courseId: id,
   topicId: id.nullable(),
   front: text,
@@ -130,6 +171,12 @@ export const reviewSchema = z.object({
 });
 export const messageSchema = z.object({
   id,
+  topicId: id.optional(),
+  savedAt: date.optional(),
+  pinnedSource: pinnedSourceSchema.optional(),
+  replyTo: id.optional(),
+  citations: z.array(citationSchema).optional(),
+  provenance: z.enum(['local', 'source', 'mixed']).optional(),
   courseId: id,
   role: z.enum(['user', 'assistant']),
   content: text,
@@ -153,8 +200,19 @@ export const sessionSchema = z.object({
   updatedAt: date,
 });
 export const settingsSchema = z.object({
+  uiLanguage: z.enum(['en', 'ru']).optional(),
+  reducedMotion: z.boolean().optional(),
   theme: z.enum(['dark', 'light']),
-  provider: z.literal('ollama'),
+  provider: z.enum(['ollama', 'codex', 'claude', 'gemini']),
+  accountDataConsent: z.boolean().default(false),
+  providerModels: z
+    .object({
+      ollama: z.string().max(200).optional(),
+      codex: z.string().max(200).optional(),
+      claude: z.string().max(200).optional(),
+      gemini: z.string().max(200).optional(),
+    })
+    .default({}),
   endpoint: z.string().min(1),
   model: text.max(200),
   explanationLanguage: text.max(100),
@@ -163,7 +221,11 @@ export const settingsSchema = z.object({
   onboardingComplete: z.boolean(),
 });
 export const stateSchema = z.object({
-  version: z.literal(1),
+  version: z.literal(2),
+  workspaces: z.array(workspaceInfoSchema).min(1),
+  activeWorkspaceId: id,
+  libraries: z.array(librarySchema),
+  sources: z.array(sourceSchema),
   settings: settingsSchema,
   courses: z.array(courseSchema),
   topics: z.array(topicSchema),
@@ -175,12 +237,20 @@ export const stateSchema = z.object({
   notes: z.array(noteSchema),
   sessions: z.array(sessionSchema),
 });
-export type Workspace = z.infer<typeof stateSchema>;
+export type AppState = z.infer<typeof stateSchema>;
+/** Compatibility view consumed by existing learning features; workspace entities are WorkspaceInfo. */
+export type Workspace = AppState;
 export const emptyWorkspace = (): Workspace => ({
-  version: 1,
+  version: 2,
+  workspaces: [defaultWorkspace()],
+  activeWorkspaceId: 'my-learning',
+  libraries: [],
+  sources: [],
   settings: {
     theme: 'dark',
     provider: 'ollama',
+    accountDataConsent: false,
+    providerModels: {},
     endpoint: 'http://localhost:11434',
     model: 'qwen3:4b',
     explanationLanguage: 'Russian',

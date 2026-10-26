@@ -66,11 +66,12 @@ export function Empty({
     </div>
   );
 }
-export function Progress({ value }: { value: number }) {
+export function Progress({ value, label = 'Прогресс' }: { value: number; label?: string }) {
   return (
     <div
       className="progress"
       role="progressbar"
+      aria-label={label}
       aria-valuenow={value}
       aria-valuemin={0}
       aria-valuemax={100}
@@ -98,7 +99,7 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 export function errorMessage(error: unknown): string {
   console.error(error);
   if (error instanceof Error && error.name === 'ZodError')
-    return 'Could not validate this data. Check your input or retry the local model.';
+    return 'Could not validate this data. Check your input or retry the selected AI model.';
   return error instanceof Error
     ? error.message
     : typeof error === 'string'

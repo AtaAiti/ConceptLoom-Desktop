@@ -1,7 +1,10 @@
+import { Dialog } from '../../components/Dialog';
 import { useState } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
-import { Empty, Field, PageHeading, Panel } from '../../components/ui';
+import { Empty, PageHeading, Panel } from '../../components/ui';
+import { CardFields } from './CardFields';
 import { newCard } from '../../learning/reviews';
+import { Citations } from '../library/SourceContext';
 import type { Commit } from '../../hooks/useWorkspace';
 import type { Course, Flashcard, Workspace } from '../../types/state';
 
@@ -32,7 +35,7 @@ export function Flashcards({
         action={
           <button className="primary" onClick={() => setEdit(newCard(course.id, null, '', ''))}>
             <Plus size={16} />
-            Create card
+            Создать карточку
           </button>
         }
       />
@@ -44,14 +47,23 @@ export function Flashcards({
             </span>
             <h3>{card.front}</h3>
             <p className="prose">{card.back}</p>
+            {card.blocks
+              ?.filter((b) => b.type !== 'text')
+              .map((b, i) => (
+                <p className="prose" key={i}>
+                  <strong>{b.type}: </strong>
+                  {b.text}
+                </p>
+              ))}
+            <Citations citations={card.citations} />
             <div className="button-row">
               <button className="text-button" onClick={() => setEdit({ ...card })}>
                 <Pencil size={14} />
-                Edit
+                Изменить
               </button>
               <button className="text-button danger" onClick={() => setRemoving(card.id)}>
                 <Trash2 size={14} />
-                Delete
+                Удалить
               </button>
             </div>
           </Panel>
@@ -60,11 +72,11 @@ export function Flashcards({
       {!cards.length && (
         <Empty
           title="Your memory starts with a question"
-          description="Create a card, or let your local tutor generate cards from a lesson."
+          description="Create a card, or let your AI tutor generate cards from a lesson."
         />
       )}
       {edit && (
-        <div className="modal-backdrop">
+        <Dialog label="Карточка" onClose={() => setEdit(null)}>
           <form
             className="modal"
             onSubmit={(e) => {
@@ -81,32 +93,23 @@ export function Flashcards({
             }}
           >
             <h2>Flashcard</h2>
-            <Field label="Front · question">
-              <textarea
-                required
-                value={edit.front}
-                onChange={(e) => setEdit({ ...edit, front: e.target.value })}
-              />
-            </Field>
-            <Field label="Back · answer">
-              <textarea
-                required
-                value={edit.back}
-                onChange={(e) => setEdit({ ...edit, back: e.target.value })}
-              />
-            </Field>
+            <CardFields
+              front={edit.front}
+              back={edit.back}
+              onChange={(value) => setEdit({ ...edit, ...value })}
+            />
             <div className="button-row">
-              <button className="primary">Save card</button>
+              <button className="primary">Сохранить карточку</button>
               <button type="button" className="secondary" onClick={() => setEdit(null)}>
-                Cancel
+                Отмена
               </button>
             </div>
           </form>
-        </div>
+        </Dialog>
       )}
       {removing && (
-        <div className="modal-backdrop">
-          <Panel title="Delete this flashcard?">
+        <Dialog label="Удалить карточку" onClose={() => setRemoving(null)}>
+          <Panel title="Удалить эту карточку?">
             <p>This also removes its review history. This cannot be undone.</p>
             <div className="button-row">
               <button
@@ -122,14 +125,14 @@ export function Flashcards({
                   })
                 }
               >
-                Delete card
+                Удалить карточку
               </button>
               <button className="secondary" onClick={() => setRemoving(null)}>
                 Keep card
               </button>
             </div>
           </Panel>
-        </div>
+        </Dialog>
       )}
     </>
   );

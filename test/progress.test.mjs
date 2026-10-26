@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { listDueReviews, loadLearningState, recordCheckpointAssessment, saveLearningState } from "../src/progress.mjs";
@@ -64,6 +64,37 @@ test("updates a session atomically and increments its revision", async () => {
   assert.deepEqual(updated.secured, ["Step one"]);
 });
 
+test("concurrent saves and assessments keep every revision and evidence increment", async () => {
+  const root = await mkdtemp(join(tmpdir(), "loom-concurrent-"));
+  const input = { sessionId: "parallel", topic: "Parallel", goal: "Learn", phase: "build", nextStep: "Next" };
+  await Promise.all(Array.from({ length: 8 }, () => saveLearningState(root, input)));
+  assert.equal((await loadLearningState(root, { sessionId: input.sessionId })).state.revision, 8);
+  await Promise.all(
+    Array.from({ length: 8 }, () =>
+      recordCheckpointAssessment(
+        root,
+        { sessionId: input.sessionId, nextStep: "Continue", evidenceConcept: "Concurrency" },
+        { format: "transfer", outcome: "accurate" },
+      ),
+    ),
+  );
+  const { state } = await loadLearningState(root, { sessionId: input.sessionId });
+  assert.equal(state.revision, 16);
+  assert.equal(state.evidence.Concurrency.attempts, 8);
+  assert.equal(state.evidence.Concurrency.successes, 8);
+});
+
+test("session storage rejects a workspace link pointing outside", async () => {
+  const root = await mkdtemp(join(tmpdir(), "loom-safe-session-"));
+  const outside = await mkdtemp(join(tmpdir(), "loom-external-session-"));
+  await symlink(outside, join(root, ".concept-loom"), process.platform === "win32" ? "junction" : "dir");
+  await assert.rejects(
+    saveLearningState(root, { sessionId: "s", topic: "Topic", goal: "Goal", phase: "build", nextStep: "Next" }),
+    /inside/,
+  );
+  await assert.rejects(loadLearningState(root), /inside/);
+});
+
 test("records checkpoint outcome before the lesson continues", async () => {
   const root = await mkdtemp(join(tmpdir(), "loom-progress-"));
   await saveLearningState(root, {
@@ -75,15 +106,19 @@ test("records checkpoint outcome before the lesson continues", async () => {
     nextStep: "Check TLS understanding",
   });
 
-  const updated = await recordCheckpointAssessment(root, {
-    sessionId: "ja4",
-    currentStep: "TLS",
-    nextStep: "Explain JA4 fields",
-    securedConnection: "TLS ClientHello structure",
-  }, {
-    outcome: "accurate",
-    selected: ["client-hello"],
-  });
+  const updated = await recordCheckpointAssessment(
+    root,
+    {
+      sessionId: "ja4",
+      currentStep: "TLS",
+      nextStep: "Explain JA4 fields",
+      securedConnection: "TLS ClientHello structure",
+    },
+    {
+      outcome: "accurate",
+      selected: ["client-hello"],
+    },
+  );
 
   assert.equal(updated.nextStep, "Explain JA4 fields");
   assert.deepEqual(updated.secured, ["TLS ClientHello structure"]);
@@ -106,19 +141,23 @@ test("tracks transfer evidence, confidence, hints, and delayed review", async ()
     nextStep: "Try a transfer problem",
   });
 
-  const updated = await recordCheckpointAssessment(root, {
-    sessionId: "transactions",
-    currentStep: "Isolation",
-    nextStep: "Review tomorrow",
-    evidenceConcept: "Isolation trade-offs",
-    hintUsed: false,
-  }, {
-    format: "transfer",
-    outcome: "accurate",
-    response: "Use serializable because the invariant spans rows.",
-    confidence: 85,
-    calibration: "well-calibrated",
-  });
+  const updated = await recordCheckpointAssessment(
+    root,
+    {
+      sessionId: "transactions",
+      currentStep: "Isolation",
+      nextStep: "Review tomorrow",
+      evidenceConcept: "Isolation trade-offs",
+      hintUsed: false,
+    },
+    {
+      format: "transfer",
+      outcome: "accurate",
+      response: "Use serializable because the invariant spans rows.",
+      confidence: 85,
+      calibration: "well-calibrated",
+    },
+  );
 
   const evidence = updated.evidence["Isolation trade-offs"];
   assert.equal(updated.mode, "practice");

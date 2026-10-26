@@ -2,12 +2,8 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 import { z } from 'zod';
 import { parseResponse } from '../schemas';
 
-export type AIMessage = { role: 'system' | 'user' | 'assistant'; content: string };
-export interface AIProvider {
-  models(): Promise<string[]>;
-  chat(messages: AIMessage[], structured?: boolean): Promise<string>;
-  structured<T>(messages: AIMessage[], schema: z.ZodType<T>): Promise<T>;
-}
+import type { AIMessage, AIProvider } from './types';
+export type { AIMessage, AIProvider } from './types';
 export function localEndpoint(value: string): string {
   let url: URL;
   try {

@@ -4,23 +4,78 @@
 
 # Concept Loom
 
-## ConceptLoom Desktop (early implementation)
+[English](#concept-loom) · [Русский](docs/ru/README.md)
 
-The new [Windows desktop application](desktop/README.md) adds an original React
-interface, local Ollama tutoring (`qwen3:4b` by default), SQLite storage, dependency
-maps, evidence-based lessons, flashcards and FSRS reviews. It requires no paid AI,
-cloud service or account. The original MCP workflow described below is preserved.
+## ConceptLoom Desktop 0.3.7
 
-Start desktop development with `cd desktop`, `npm ci`, and `npm run desktop`.
-See [the repository inspection and implementation plan](docs/desktop-plan.md) for
-methodology reuse, architecture, milestones and verification. The desktop README
-documents Windows build requirements, privacy, storage and current limitations.
+A Windows learning app built with React, Tauri and SQLite: import your own
+materials, build a map of concepts, study one connection at a time, check your
+understanding and review flashcards with FSRS. The CAPYBARA interface includes
+independent workspaces, libraries, Today, Roadmap, Study Hub and light/dark themes.
+
+Run AI locally with Ollama (`qwen3:4b` by default), or use the app's account-client
+connections for ChatGPT, Claude or Gemini. Account connections require internet,
+explicit consent and access accepted by the relevant official client. An account
+or subscription does not guarantee every model. See [AI setup and privacy](docs/account-providers.md).
+
+**Current source version: Desktop 0.3.7.** Use the default `main` branch for the
+complete P1–P6 implementation and this documentation. The independent original
+MCP package remains version 1.1.0. See the [implementation history](docs/notebooklm-product-review.md)
+for the delivered milestones and their verification.
+
+### What you can do
+
+- Import PDF, TXT, Markdown or pasted text and search saved passages locally.
+- **P1 — read with a tutor:** open a page or citation, choose a precise fragment
+  and send an editable question with that source context.
+- **P2 — save explanations:** bookmark tutor replies in Study Hub, retaining their
+  citations for later reading.
+- **P3 — ask about the map:** start a tutor question from a selected concept and
+  its prerequisites.
+- **P4 — practise a passage:** generate two draft flashcards, edit/select them,
+  then explicitly add them to FSRS review.
+- **P5 — inspect a section:** request three points, three terms and three questions
+  for 1–5 selected pages. The cached guide states its coverage and flags changed text.
+- **P6 — compare concepts:** compare two concepts across three criteria with
+  citations for each supported side and explicit missing evidence. Save the result
+  in the conversation or bookmark it.
+
+Reading, generated explanations and comparisons do not count as mastery evidence.
+See [P1–P6 scope and implementation notes](docs/notebooklm-product-review.md).
+
+![Source comparison with independent citations in ConceptLoom Desktop](assets/desktop-source-comparison.png)
+
+*Source comparison screen with synthetic demonstration materials. The
+[desktop guide](desktop/README.md) covers setup, limits and verification.*
+
+### Start the current desktop development version
+
+Install the [Windows build prerequisites](desktop/README.md#windows-requirements),
+then clone the default branch:
+
+```powershell
+git clone https://github.com/AtaAiti/ConceptLoom-Desktop.git
+cd ConceptLoom-Desktop/desktop
+npm ci
+npm run desktop
+```
+
+For local AI, install Ollama separately and download `qwen3:4b` once with
+`ollama pull qwen3:4b`. The app also offers the account-client path in Settings.
+Browser preview and the installed Windows app use separate storage; account
+connections require the Windows app.
+
+Build a Windows installer with `npm run package` from `desktop`. The NSIS output
+is under `desktop/src-tauri/target/release/bundle/nsis/`. Local copies in
+`desktop/releases/` are Git-ignored build artifacts, not source-controlled downloads.
+
+## Original MCP workflow — 1.1.0
 
 **A portable AI learning workflow for Codex, Claude Code, OpenCode, and DeepSeek Harness.**
 
-Version 1.1.0 · MIT licensed · Node.js 20+
-
-[English](#concept-loom) · [Русский](docs/ru/README.md)
+MCP package version 1.1.0 · MIT licensed · Node.js 20+. The MCP package and Desktop
+have separate versions, setup commands and storage. The workflow below runs inside
+a coding client; it is not required to launch the desktop app.
 
 Concept Loom turns a coding agent into a structured learning partner. Instead of immediately producing a long explanation, it helps you define a useful goal, finds the edge of your current understanding, proposes a short dependency path, and teaches one connection at a time.
 
@@ -30,7 +85,7 @@ goal → knowledge frontier → learning map → one connection → check → tr
 
 It works with topics you explore from scratch and with your own books, courses, notes, code, and transcripts.
 
-## Why use it?
+### Why use it?
 
 - Learn toward a practical outcome instead of surveying an entire field.
 - Expose gaps and misconceptions before building on them.
@@ -41,7 +96,7 @@ It works with topics you explore from scratch and with your own books, courses, 
 - Use the same workflow in Codex, Claude Code, OpenCode, and DeepSeek Harness.
 - Show compact text or Mermaid diagrams directly in the conversation.
 
-## Documentation
+### Documentation
 
 | Guide | Use it when… |
 |---|---|
@@ -51,7 +106,7 @@ It works with topics you explore from scratch and with your own books, courses, 
 
 Russian documentation starts at [docs/ru/README.md](docs/ru/README.md).
 
-## Quick start with Codex
+### Quick start with Codex
 
 Requirements: Node.js 20+ and Codex CLI.
 
@@ -75,7 +130,7 @@ Use $concept-coach. I want to understand database transactions well enough
 to choose the right isolation level for a small web application.
 ```
 
-## Other clients
+### Other clients
 
 ```bash
 node scripts/setup.mjs claude-code --target /path/to/learning-workspace
@@ -91,16 +146,21 @@ npx @deepseek-ai/dsh --profile web --patch .dsh/concept-loom.patch.yml
 
 DeepSeek Harness is currently a developer preview and may introduce breaking configuration changes. Use `--skip-mcp` if you only want the `.dsh/skills/concept-coach` skill and will connect the MCP server through your own Harness profile.
 
-The installer refuses to overwrite existing configuration. Merge a generated Concept Loom file manually when guidance or MCP configuration already exists.
+Initial installation refuses to overwrite existing configuration and may generate
+fallback guidance to merge manually. `--refresh` updates the managed skill files
+(and the DeepSeek Harness patch); it does not replace all workspace configuration.
 
-Concept Loom has no runtime npm dependencies. Small structures are displayed as monospace text diagrams; larger relationship maps are returned as Mermaid blocks that remain readable in the terminal and render in compatible Markdown viewers.
+The original MCP package has no runtime npm dependencies. Small structures are displayed as monospace text diagrams; larger relationship maps are returned as Mermaid blocks that remain readable in the terminal and render in compatible Markdown viewers.
 
-## Verify the project
+### Verify the original MCP package
 
 ```bash
 npm test
 npm run check
 ```
+
+Run these commands from the repository root. Desktop checks are separate; see
+[desktop verification](desktop/README.md#verification).
 
 ## License
 
