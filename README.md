@@ -9,7 +9,7 @@ with the original MIT attribution retained in [LICENSE](LICENSE).
 
 [English](#concept-loom) · [Русский](docs/ru/README.md)
 
-## ConceptLoom Desktop 0.3.7
+## ConceptLoom Desktop 0.3.8
 
 A Windows learning app built with React, Tauri and SQLite: import your own
 materials, build a map of concepts, study one connection at a time, check your
@@ -21,7 +21,7 @@ connections for ChatGPT, Claude or Gemini. Account connections require internet,
 explicit consent and access accepted by the relevant official client. An account
 or subscription does not guarantee every model. See [AI setup and privacy](docs/account-providers.md).
 
-**Current source version: Desktop 0.3.7.** Use the default `main` branch for the
+**Current source version: Desktop 0.3.8.** Use the default `main` branch for the
 complete P1–P6 implementation and this documentation. The independent original
 MCP package remains version 1.1.0. See the [implementation history](docs/notebooklm-product-review.md)
 for the delivered milestones and their verification.

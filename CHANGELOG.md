@@ -2,7 +2,7 @@
 
 All notable changes to Concept Loom are documented here.
 
-## Unreleased — Desktop learning reliability
+## Desktop 0.3.8 — 2026-10-28
 
 - Count FSRS Hard as partial recall evidence instead of total failure; keep Good/Easy delayed recall as the requirement for lifting the provisional mastery ceiling.
 - Compute recent evidence and the first attempt chronologically, independent of storage order.

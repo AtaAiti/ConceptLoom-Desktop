@@ -1,6 +1,6 @@
 # Learning reliability follow-up — 2026-10-27
 
-Development changes after Desktop 0.3.7. This follow-up keeps the existing product
+Packaged as Desktop 0.3.8 on 2026-10-28 after Desktop 0.3.7. This follow-up keeps the existing product
 name, storage format, evidence history and provider choice. No database migration,
 new dependency or automatic cloud inference is introduced.
 
