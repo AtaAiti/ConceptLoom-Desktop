@@ -1,6 +1,6 @@
 # ConceptLoom Desktop
 
-**Desktop 0.3.7 · Windows · MIT · local-first**
+**Desktop 0.3.8 · Windows · MIT · local-first**
 
 An independent desktop app based on [Zproger/ConceptLoom](https://github.com/Zproger/ConceptLoom).
 The original MIT attribution is retained in [LICENSE](../LICENSE).
@@ -19,7 +19,7 @@ explicit consent. See [account setup and privacy](../docs/account-providers.md).
 
 ## Version
 
-This guide covers **Desktop 0.3.7 on `main`**, including all six P1–P6 MVP slices.
+This guide covers **Desktop 0.3.8 on `main`**, including all six P1–P6 MVP slices.
 The version agrees with `package.json` and the Tauri/Cargo manifests. Historical
 implementation notes document each milestone's scope and verification.
 
@@ -129,7 +129,7 @@ npm run package  # Windows release NSIS installer
 
 Release installers are written to `src-tauri/target/release/bundle/nsis/`.
 `npx tauri build --debug` instead writes to `src-tauri/target/debug/bundle/nsis/`.
-The filename follows `ConceptLoom_<version>_x64-setup.exe` (currently 0.3.7).
+The filename follows `ConceptLoom_<version>_x64-setup.exe` (currently 0.3.8).
 Copies, checksums and build logs in `desktop/releases/` are Git-ignored local
 artifacts. Local development installers are unsigned; building does not run them.
 
@@ -166,7 +166,7 @@ Schema checks and valid citation IDs do not establish that every generated claim
 is correct. Review the cited text and AI-generated drafts. Generating, reading or
 saving explanations/comparisons does not create attempts, FSRS reviews or mastery.
 
-Development changes after 0.3.7 fix Hard recall scoring, chronological evidence
+Version 0.3.8 fixes Hard recall scoring, chronological evidence
 and prerequisite relocking. See [learning rules, local-model checks and performance
 profiling](../docs/learning-reliability.md) for exact semantics and verification.
 
