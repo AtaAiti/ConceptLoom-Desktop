@@ -5,10 +5,15 @@ import { frontier } from '../conceptloom';
 export const dayKey = (value: string | Date) => new Date(value).toLocaleDateString('en-CA');
 export function statistics(state: Workspace, now = new Date()) {
   const attempts = state.attempts;
-  const days = new Set([
-    ...attempts.map((a) => dayKey(a.createdAt)),
-    ...state.reviews.map((r) => dayKey(r.createdAt)),
-  ]);
+  const activity = new Map<string, { seconds: number; count: number }>();
+  for (const record of [...attempts, ...state.reviews]) {
+    const key = dayKey(record.createdAt);
+    const daily = activity.get(key) ?? { seconds: 0, count: 0 };
+    daily.count++;
+    if ('elapsedSeconds' in record) daily.seconds += record.elapsedSeconds;
+    activity.set(key, daily);
+  }
+  const days = new Set(activity.keys());
   let streak = 0;
   const date = new Date(now);
   if (!days.has(dayKey(date))) date.setDate(date.getDate() - 1);
@@ -20,22 +25,23 @@ export function statistics(state: Workspace, now = new Date()) {
     const date = new Date(now);
     date.setDate(date.getDate() - 6 + i);
     const key = dayKey(date);
-    const daily = attempts.filter((a) => dayKey(a.createdAt) === key);
+    const daily = activity.get(key);
     return {
       key,
       label: date.toLocaleDateString(undefined, { weekday: 'short' }),
-      minutes: Math.round(daily.reduce((sum, a) => sum + a.elapsedSeconds, 0) / 60),
-      count: daily.length + state.reviews.filter((r) => dayKey(r.createdAt) === key).length,
+      minutes: Math.round((daily?.seconds ?? 0) / 60),
+      count: daily?.count ?? 0,
     };
   });
+  const scores = state.topics.map((t) => topicMastery(state, t.id));
   return {
     streak,
     week,
     accuracy: attempts.length
       ? Math.round((100 * attempts.filter((a) => a.accurate).length) / attempts.length)
       : 0,
-    learned: state.topics.filter((t) => topicMastery(state, t.id) > 20).length,
-    mastered: state.topics.filter((t) => topicMastery(state, t.id) >= 81).length,
+    learned: scores.filter((score) => score > 20).length,
+    mastered: scores.filter((score) => score >= 81).length,
     due: state.cards.filter((c) => new Date(c.due) <= now).length,
     minutes: Math.round(attempts.reduce((sum, a) => sum + a.elapsedSeconds, 0) / 60),
     lessonsCompleted: state.lessons.filter((l) =>

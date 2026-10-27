@@ -19,6 +19,26 @@ const course = (workspaceId = 'my-learning') =>
     explanationLanguage: 'Russian',
   });
 describe('workspace migration and isolation', () => {
+  it('diffs immutable snapshots while sending validated new/changed records and preserving deletions', () => {
+    const app = emptyWorkspace();
+    app.courses = [course()];
+    app.cards = [
+      newCard(app.courses[0].id, null, 'Question', 'Answer'),
+      newCard(app.courses[0].id, null, 'Delete me', 'Answer'),
+    ];
+    const before = validateWorkspace(app);
+    const changed = { ...before.cards[0], front: '  Changed question  ' };
+    const added = newCard(app.courses[0].id, null, '  New question  ', 'Answer');
+    const original = { ...before, cards: [changed, added] };
+    const parsed = validateWorkspace(original);
+    const patch = changesBetween(before, parsed, original);
+    expect(patch.upserts.cards).toEqual(parsed.cards);
+    expect(patch.upserts.cards[0]).toMatchObject({ front: 'Changed question' });
+    expect(patch.upserts.courses).toEqual([]);
+    expect(patch.deletes.cards).toEqual([before.cards[1].id]);
+    expect(changesBetween(before, validateWorkspace(before), before).upserts.cards).toEqual([]);
+    expect(before.cards[0].front).toBe('Question');
+  });
   it('preserves old identities, FSRS and notes; migration is idempotent', () => {
     const old = {
       ...emptyWorkspace(),
