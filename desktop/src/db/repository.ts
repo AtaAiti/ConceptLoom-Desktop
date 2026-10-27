@@ -111,7 +111,7 @@ export const repository: Repository = {
     const parsed = validateWorkspace(state);
     if (isTauri()) {
       const before = previous ?? (await this.load());
-      const patch = changesBetween(before, parsed);
+      const patch = changesBetween(before, parsed, state);
       // A new installation has no settings row yet.
       patch.settings = parsed.settings;
       await invoke('apply_changes', { patch });

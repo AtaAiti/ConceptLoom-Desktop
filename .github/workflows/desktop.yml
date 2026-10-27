@@ -2,6 +2,8 @@ name: Desktop checks
 on:
   push:
   pull_request:
+permissions:
+  contents: read
 jobs:
   desktop:
     runs-on: windows-latest
@@ -20,10 +22,12 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npx playwright install chromium
-      - run: npx playwright test
+      - name: Verify development browser workflows
+        run: npx playwright test
       - name: Verify production workflows and offline PDF worker
         run: |
           $env:PLAYWRIGHT_PREVIEW = '1'
           npx playwright test
       - run: cargo test --manifest-path src-tauri/Cargo.toml
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
       - run: npm run tauri -- build --no-bundle

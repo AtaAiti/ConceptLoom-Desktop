@@ -97,6 +97,46 @@ function learningFixture() {
   return state;
 }
 
+test('a practised topic stays open after a prerequisite lapse and offers a return to the foundation', async ({
+  page,
+}) => {
+  const state = learningFixture();
+  const child = state.topics[0];
+  const foundation = { ...child, id: 'foundation', title: 'Foundation' };
+  state.topics = [{ ...child, dependsOn: [foundation.id] }, foundation, state.topics[1]];
+  state.attempts = [
+    {
+      id: 'prior-practice',
+      courseId: child.courseId,
+      topicId: child.id,
+      exerciseId: 'recall',
+      response: 'Earlier response',
+      dimension: 'recall',
+      accurate: true,
+      gap: false,
+      hintUsed: false,
+      confidence: 70,
+      feedback: 'Earlier feedback',
+      createdAt: '2026-10-15T12:00:00.000Z',
+      elapsedSeconds: 20,
+    },
+  ];
+  await seed(page, state);
+  await page.getByRole('button', { name: 'Сегодня', exact: true }).click();
+  await page.getByRole('button', { name: 'Начать занятие', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Concept 0', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Your answer')).toBeVisible();
+  await expect(
+    page.getByText('Стоит повторить предпосылки. Вы можете продолжить это занятие.'),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Повторить: Foundation', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Foundation', exact: true })).toBeVisible();
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('conceptloom-desktop-preview-v1')!),
+  );
+  expect(saved.attempts).toHaveLength(1);
+});
+
 test('a late AI assessment stays in its original course and never appears on another lesson', async ({
   page,
 }) => {

@@ -9,8 +9,11 @@ const weights: Record<Dimension, number> = {
 };
 export function mastery(attempts: Attempt[]): number {
   let score = 0;
+  const chronological = [...attempts].sort(
+    (a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt),
+  );
   for (const dimension of Object.keys(weights) as Dimension[]) {
-    const recent = attempts.filter((a) => a.dimension === dimension).slice(-5);
+    const recent = chronological.filter((a) => a.dimension === dimension).slice(-5);
     if (!recent.length) continue;
     const evidence = recent.reduce(
       (sum, a, i) => sum + (a.accurate ? (a.hintUsed ? 0.5 : 1) : 0) * (i + 1),
@@ -33,7 +36,8 @@ export function topicMastery(state: Workspace, topicId: string): number {
       exerciseId: r.cardId,
       response: String(r.rating),
       dimension: 'recall',
-      accurate: r.rating >= 3,
+      // Hard is successful but difficult recall: partial evidence, never an Again.
+      accurate: r.rating >= 2,
       gap: false,
       hintUsed: r.rating === 2,
       confidence: 50,
@@ -41,10 +45,12 @@ export function topicMastery(state: Workspace, topicId: string): number {
       createdAt: r.createdAt,
       elapsedSeconds: 0,
     }));
-  const score = mastery(
-    [...attempts, ...reviews].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+  const score = mastery([...attempts, ...reviews]);
+  const firstAttempt = attempts.reduce<Attempt | undefined>(
+    (earliest, a) =>
+      !earliest || Date.parse(a.createdAt) < Date.parse(earliest.createdAt) ? a : earliest,
+    undefined,
   );
-  const firstAttempt = attempts[0];
   const spacedRecall =
     firstAttempt &&
     state.reviews.some(
@@ -53,7 +59,7 @@ export function topicMastery(state: Workspace, topicId: string): number {
         r.rating >= 3 &&
         new Date(r.createdAt).getTime() - new Date(firstAttempt.createdAt).getTime() >= 86400000,
     );
-  // Immediate accuracy is provisional; mastery requires successful delayed retrieval.
+  // Immediate accuracy is provisional; Good/Easy recall after a full day lifts the ceiling.
   return spacedRecall ? score : Math.min(80, score);
 }
 export function masteryLabel(score: number): string {

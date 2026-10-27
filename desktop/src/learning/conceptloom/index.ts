@@ -48,7 +48,11 @@ export function topicStatus(
   state: Workspace,
   topic: Topic,
 ): 'locked' | 'available' | 'learning' | 'reviewing' | 'mastered' {
-  if (!topic.approved || topic.dependsOn.some((id) => topicMastery(state, id) < 61))
+  const practised =
+    state.attempts.some((a) => a.topicId === topic.id) ||
+    state.reviews.some((r) => r.topicId === topic.id);
+  // Prerequisites gate first practice. A lapse must not take away an existing learning path.
+  if (!topic.approved || (!practised && topic.dependsOn.some((id) => topicMastery(state, id) < 61)))
     return 'locked';
   const score = topicMastery(state, topic.id);
   if (
@@ -56,7 +60,7 @@ export function topicStatus(
   )
     return 'reviewing';
   if (score >= 81) return 'mastered';
-  return state.attempts.some((a) => a.topicId === topic.id) ? 'learning' : 'available';
+  return practised ? 'learning' : 'available';
 }
 export function frontier(state: Workspace, courseId: string): Topic[] {
   return state.topics.filter(

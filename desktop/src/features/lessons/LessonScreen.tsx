@@ -65,6 +65,10 @@ export function LessonScreen({
   const needsRepair = lesson && !generatedLessonSchema.safeParse(lesson.content).success;
   const located = state.attempts.some((a) => a.topicId === topic.id);
   const score = topicMastery(state, topic.id);
+  const prerequisitesToRevisit = state.topics.filter(
+    (t) =>
+      t.courseId === course.id && topic.dependsOn.includes(t.id) && topicMastery(state, t.id) < 61,
+  );
   const next = state.topics.find(
     (t) =>
       t.courseId === course.id &&
@@ -165,6 +169,22 @@ export function LessonScreen({
           </span>
         }
       />
+      {prerequisitesToRevisit.length > 0 && (
+        <Panel>
+          <p>Стоит повторить предпосылки. Вы можете продолжить это занятие.</p>
+          <div className="button-row">
+            {prerequisitesToRevisit.map((prerequisite) => (
+              <button
+                key={prerequisite.id}
+                className="secondary"
+                onClick={() => select(prerequisite)}
+              >
+                Повторить: {prerequisite.title}
+              </button>
+            ))}
+          </div>
+        </Panel>
+      )}
       {!lesson && <SourceContext state={state} course={course} commit={commit} run={run} />}
       {lesson && <Citations citations={lesson.citations} />}
       {(!lesson || needsRepair) && (
@@ -366,6 +386,9 @@ export function LessonScreen({
                             />
                             <span>{confidence}%</span>
                           </label>
+                          <p className="muted small">
+                            Уверенность помогает разобрать ошибки и не повышает балл знания.
+                          </p>
                           <div className="button-row">
                             <button
                               className="primary"

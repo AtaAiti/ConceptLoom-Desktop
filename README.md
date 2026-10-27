@@ -4,6 +4,9 @@
 
 # Concept Loom
 
+An independent desktop extension and fork of [Zproger/ConceptLoom](https://github.com/Zproger/ConceptLoom),
+with the original MIT attribution retained in [LICENSE](LICENSE).
+
 [English](#concept-loom) · [Русский](docs/ru/README.md)
 
 ## ConceptLoom Desktop 0.3.7

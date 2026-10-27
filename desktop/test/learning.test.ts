@@ -12,12 +12,13 @@ import {
   topicStatus,
   validateMap,
   prepareLesson,
+  frontier,
 } from '../src/learning/conceptloom';
 import { mastery, topicMastery } from '../src/learning/mastery';
 import { createCourse, deleteCourse, initialTopics } from '../src/learning/courses';
 import { newCard, Rating, reviewCard } from '../src/learning/reviews';
 import { validateWorkspace } from '../src/db/repository';
-import { statistics } from '../src/learning/planner';
+import { statistics, todayPlan } from '../src/learning/planner';
 
 const input = {
   name: 'Korean',
@@ -96,6 +97,122 @@ describe('evidence-based learning', () => {
     expect(topicStatus(state, state.topics[0])).toBe('available');
     expect(topicStatus(state, state.topics[1])).toBe('locked');
   });
+  it('counts Hard as partial recall, between Again and Good, without changing FSRS ratings', () => {
+    const state = emptyWorkspace();
+    state.attempts = (['recognition', 'recall', 'application', 'transfer'] as const).map((d) =>
+      attempt(d),
+    );
+    const score = (rating: number) =>
+      topicMastery(
+        {
+          ...state,
+          reviews: [
+            {
+              id: 'r',
+              courseId: 'c',
+              cardId: 'card',
+              topicId: 't',
+              rating,
+              createdAt: '2026-10-17T12:00:00.000Z',
+            },
+          ],
+        },
+        't',
+      );
+    expect(score(Rating.Again)).toBe(80);
+    expect(score(Rating.Hard)).toBe(80); // Still provisional until strong delayed recall.
+    // Isolate recall so the 80-point provisional ceiling cannot mask the distinction.
+    state.attempts = [];
+    expect(score(Rating.Again)).toBe(0);
+    expect(score(Rating.Hard)).toBe(15);
+    expect(score(Rating.Good)).toBe(30);
+    expect(score(Rating.Easy)).toBe(30);
+  });
+  it('uses the earliest attempt and chronological recent evidence regardless of storage order', () => {
+    const state = emptyWorkspace();
+    const oldest = (['recognition', 'recall', 'application', 'transfer'] as const).map((d) =>
+      attempt(d),
+    );
+    const latest = { ...attempt('recall', false), createdAt: '2026-10-18T12:00:00.000Z' };
+    state.attempts = [latest, ...oldest];
+    state.reviews = [
+      {
+        id: 'r',
+        courseId: 'c',
+        cardId: 'card',
+        topicId: 't',
+        rating: 3,
+        createdAt: '2026-10-17T12:00:00.000Z',
+      },
+    ];
+    const sorted = [...state.attempts].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    expect(topicMastery(state, 't')).toBe(85);
+    expect(topicMastery({ ...state, attempts: sorted }, 't')).toBe(85);
+    expect(mastery([latest, ...oldest])).toBe(mastery([...oldest, latest]));
+  });
+  it('requires a full day and Good/Easy recall before granting Mastered', () => {
+    const state = emptyWorkspace();
+    state.attempts = (['recognition', 'recall', 'application', 'transfer'] as const).map((d) =>
+      attempt(d),
+    );
+    const review = {
+      id: 'r',
+      courseId: 'c',
+      cardId: 'card',
+      topicId: 't',
+      rating: 3,
+      createdAt: '2026-10-16T11:59:59.999Z',
+    };
+    state.reviews = [review];
+    expect(topicMastery(state, 't')).toBe(80);
+    state.reviews = [{ ...review, createdAt: '2026-10-16T12:00:00.000Z' }];
+    expect(topicMastery(state, 't')).toBe(100);
+    state.reviews[0].rating = Rating.Hard;
+    expect(topicMastery(state, 't')).toBe(80);
+  });
+  it('keeps practised topics accessible after prerequisite lapses without unlocking new topics', () => {
+    const state = emptyWorkspace();
+    const course = createCourse(input);
+    state.courses = [course];
+    const root: Topic = {
+      id: 'root',
+      courseId: course.id,
+      title: 'Foundation',
+      description: '',
+      dependsOn: [],
+      approved: true,
+    };
+    const child: Topic = { ...root, id: 'child', title: 'Practised concept', dependsOn: ['root'] };
+    const fresh = { ...child, id: 'fresh' };
+    state.topics = [root, child, fresh];
+    state.attempts = [{ ...attempt('application'), courseId: course.id, topicId: child.id }];
+    expect(topicStatus(state, child)).toBe('learning');
+    expect(topicStatus(state, fresh)).toBe('locked');
+    expect(frontier(state, course.id)).toContainEqual(child);
+    state.topics = [child, root, fresh];
+    expect(todayPlan(state)[0].topic.id).toBe(child.id);
+    expect(topicStatus(state, { ...child, approved: false })).toBe('locked');
+    // A delayed card review also preserves access when there is no lesson attempt.
+    state.attempts = [];
+    const card = reviewCard(newCard(course.id, child.id, 'Question', 'Answer'), Rating.Again);
+    state.cards = [{ ...card, due: '2026-01-01T00:00:00.000Z' }];
+    state.reviews = [
+      {
+        id: 'r',
+        courseId: course.id,
+        cardId: card.id,
+        topicId: child.id,
+        rating: Rating.Again,
+        createdAt: '2026-10-17T12:00:00.000Z',
+      },
+    ];
+    expect(topicStatus(state, child)).toBe('reviewing');
+    expect(statistics(state).due).toBe(1);
+    expect(frontier(state, course.id)).toContainEqual(child);
+    // An unreviewed generated card is not evidence that a topic has been practised.
+    state.reviews = [];
+    expect(topicStatus(state, child)).toBe('locked');
+  });
   it('recognition alone cannot master a concept; mistakes and hints reduce evidence', () => {
     expect(mastery([attempt('recognition')])).toBe(15);
     const dimensions: Attempt['dimension'][] = ['recognition', 'recall', 'application', 'transfer'];
@@ -158,6 +275,32 @@ describe('courses and persistence boundaries', () => {
   });
 });
 describe('real FSRS scheduling', () => {
+  it('preserves daily counts, study minutes and streaks when aggregating attempts and reviews', () => {
+    const state = emptyWorkspace();
+    const now = new Date(2026, 9, 27, 12);
+    const yesterday = new Date(2026, 9, 26, 12).toISOString();
+    state.attempts = [
+      { ...attempt('recall'), createdAt: yesterday, elapsedSeconds: 30 },
+      { ...attempt('application', false), createdAt: yesterday, elapsedSeconds: 60 },
+    ];
+    state.reviews = [
+      {
+        id: 'r',
+        courseId: 'c',
+        topicId: 't',
+        cardId: 'card',
+        rating: 3,
+        createdAt: now.toISOString(),
+      },
+    ];
+    const stats = statistics(state, now);
+    expect(stats.streak).toBe(2);
+    expect(stats.accuracy).toBe(50);
+    expect(stats.minutes).toBe(2);
+    expect(stats.week.at(-2)).toMatchObject({ count: 2, minutes: 2 });
+    expect(stats.week.at(-1)).toMatchObject({ count: 1, minutes: 0 });
+    expect(stats.week.slice(0, 5).every((day) => day.count === 0 && day.minutes === 0)).toBe(true);
+  });
   it('serializes state, schedules distinct ratings and preserves identity', () => {
     const now = new Date('2026-10-15T12:00:00.000Z');
     const card = newCard('c', null, 'Front', 'Back', now);
