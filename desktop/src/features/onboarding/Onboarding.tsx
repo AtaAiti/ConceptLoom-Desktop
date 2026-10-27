@@ -111,7 +111,7 @@ export function Onboarding({ state, commit }: { state: Workspace; commit: Commit
             <div className="eyebrow">03 / YOUR MODEL</div>
             <h1>Small model. Big ideas.</h1>
             <p>
-              qwen3:4b is the default for your 16 GB computer. Speed depends on your local hardware.
+              qwen3:4b is the default local model. Speed and memory use depend on your hardware.
             </p>
             <label className="field">
               <span>Local model</span>
