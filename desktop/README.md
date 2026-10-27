@@ -2,6 +2,9 @@
 
 **Desktop 0.3.7 · Windows · MIT · local-first**
 
+An independent desktop app based on [Zproger/ConceptLoom](https://github.com/Zproger/ConceptLoom).
+The original MIT attribution is retained in [LICENSE](../LICENSE).
+
 Learn from your own materials: organise workspaces and libraries, build a concept
 map, study one connection, check understanding and review flashcards with FSRS.
 The CAPYBARA interface includes Home, Today, Sources, Roadmap, Study Hub, local
@@ -162,6 +165,10 @@ The title is optional; an empty title uses the first non-empty text line.
 Schema checks and valid citation IDs do not establish that every generated claim
 is correct. Review the cited text and AI-generated drafts. Generating, reading or
 saving explanations/comparisons does not create attempts, FSRS reviews or mastery.
+
+Development changes after 0.3.7 fix Hard recall scoring, chronological evidence
+and prerequisite relocking. See [learning rules, local-model checks and performance
+profiling](../docs/learning-reliability.md) for exact semantics and verification.
 
 ## Data and privacy
 

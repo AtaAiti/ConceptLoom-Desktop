@@ -1,4 +1,35 @@
-# Account AI providers — Desktop 0.3.1
+# Account AI providers — Desktop 0.3.7
+
+## Claude Code distribution conditions — checked 2026-10-27
+
+The Claude bridge is experimental. Successful CLI login is a technical check,
+not confirmation that this product's integration is permitted or included in a
+subscription. The current implementation accepts Claude-account authentication
+only and removes API-key environment overrides to prevent unexpected billing.
+Those constraints require review before wider distribution.
+
+Anthropic's [legal and compliance page](https://code.claude.com/docs/en/legal-and-compliance)
+allows hosting/running its unmodified official Claude Code client under stated
+commercial conditions, including preserving built-in authentication methods and
+users authenticating with their own credentials. The same page restricts offering
+Claude.ai login or routing subscription requests for users in third-party products.
+The [account guidance](https://support.claude.com/en/articles/13189465-log-in-to-your-claude-account)
+directs developers toward API/cloud-provider authentication and says some
+third-party usage may be charged to usage credits.
+
+Our account-only restriction may conflict with the hosted-client conditions.
+Using an official executable and leaving tokens with it does not settle that
+question. This project has no recorded Anthropic confirmation for this integration;
+do not describe it as approved subscription access. The bridge remains available
+for compatibility with existing users, with an experimental notice in Settings.
+No new authentication or billing mode is enabled by this update.
+
+Before distributing the Claude integration more widely, obtain clarification of
+the described account-only, tool-disabled `claude -p` flow, or implement an
+explicit API/cloud path with separate billing consent. Do not silently enable
+ambient API keys as a workaround. Ollama remains the local alternative.
+
+The connection instructions below describe current implementation behaviour.
 
 ## Connect an account
 
@@ -11,7 +42,8 @@
    browser. Codex uses ChatGPT login; Claude uses Claude account login rather than
    API Console; Gemini uses Login with Google. Close the client window after login.
 4. Refresh status and click Test response. This sends a fixed generic prompt,
-   without learning materials, and consumes the account's normal usage allowance.
+   without learning materials. Usage is charged according to the provider's
+   current rules; subscription inclusion is not guaranteed.
 5. Keep model `default` for the official client's default, choose a Claude alias
    (`sonnet`, `opus`, `haiku`), or enter an accessible model ID. A preset is not a
    guarantee of entitlement. Test the selected model to verify access.

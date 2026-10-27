@@ -195,6 +195,12 @@ export function Settings({
                     : 'В Gemini CLI выберите Login with Google.'}{' '}
                 Доступ к моделям и лимиты определяет сервис. API-ключ не нужен.
               </p>
+              {settings.provider === 'claude' && (
+                <p className="muted small">
+                  Экспериментальное подключение через Claude Code. Включение запросов в подписку не
+                  гарантируется. Условия для этого приложения ещё требуют подтверждения у Anthropic.
+                </p>
+              )}
               <div className="account-status" role="status">
                 <strong>{account?.version || 'Официальный клиент'}</strong>
                 <span>{accountIssue || account?.message || 'Проверяется наличие клиента…'}</span>
